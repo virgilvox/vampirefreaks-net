@@ -82,6 +82,14 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - `npm run admin:grant -- <email>` promotes the first moderator (roles are not self-serve). To make yourself staff on the live site: SSH to the droplet, `cd /opt/vf`, then `docker compose -f docker-compose.prod.yml run --rm -e DATABASE_URL=postgres://vf:<pw>@db:5432/vf app npm run admin:grant -- you@email` (or run the SQL `update "user" set role='admin' where email=...`).
 - e2e covers reporting, the staff-only gate (non-admin 403), and staff removal. 60 unit/component pass; CI e2e green. Deployed and verified.
 
+### Photo galleries, routing-bug fix, copy cleanup, registry move
+
+- Galleries (Phase 2 media, live): server-to-Spaces upload via a hand-rolled SigV4 PUT (no AWS SDK, no browser CORS), bucket-scoped Spaces key minted with `doctl spaces keys create`. Upload, set-as-avatar (one txn), caption, delete, lightbox at `/[username]/gallery`; avatar renders on the profile header; a pics strip on the profile. EXIF/thumbnails/photo-ratings deferred. Verified the signing end to end (PUT 200, CDN GET 200).
+- Routing bug FIXED: `pages/[username].vue` and `pages/account.vue` were acting as parent route components with no `<NuxtPage>`, so every nested route (My Journal, Friends, Pics, Friend Requests, journal editor) rendered the parent profile/account page. Moved both to `index.vue` so children are siblings. Verified live: `/virgilvox` is the profile while `/virgilvox/journal|friends|gallery` each render their own page.
+- Copy: removed the LLM/marketing lines ("No store, no premium.", "Welcome to the crypt", "Join the night", homage/"good parts" blurbs, "not a free-for-all") for plain wording. Added a GitHub link to the repo in the footer. Re-verified zero em dashes anywhere.
+- Registry: the shared DO container registry hit its storage quota (push denied, deployed tag went stale). Switched image builds to GHCR (`ghcr.io/virgilvox/vampirefreaks-net:latest`, public package, built-in GITHUB_TOKEN, only `:latest` tag). Droplet `APP_IMAGE` repointed to GHCR; redeployed and verified the new image is serving.
+- Note: the live owner account is `virgilvox` (Moheeb). Make it staff with `npm run admin:grant -- <email>` to use the moderation queue.
+
 ### Phases remaining
 
 - Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.

@@ -41,6 +41,8 @@ The social network (Postgres via Drizzle, schema as code):
   (approve, promote/demote, remove), member roster, member count.
 - Blocking: block/unblock cuts messaging, rating, commenting, and friend requests both
   ways and clears any friendship.
+- Photo galleries: upload to Spaces, set a photo as the avatar, caption, delete, lightbox.
+  The avatar renders on the profile header and a pics strip shows on the profile.
 - The shell: the early-2000s VampireFreaks 3-column layout (blackletter wordmark, live
   FREAK COUNT and online count, dense magenta nav, left member sidebar, center content,
   right Top Cults / Top Journals / Newest rails) and the oversaturated homepage.
@@ -84,8 +86,10 @@ detail in `deploy/README.md` and `docs/sessions/001-...`.
 
 - Droplet `vampirefreaks` (sfo3, s-1vcpu-1gb), project lumen. Volume `vfdata` at
   `/mnt/vfdata`. Stack in `/opt/vf/docker-compose.prod.yml`.
-- Image build: `.github/workflows/deploy.yml` on push to `main`. Needs the repo secret
-  `DIGITALOCEAN_ACCESS_TOKEN` (set).
+- Image build: `.github/workflows/deploy.yml` on push to `main` pushes
+  `ghcr.io/virgilvox/vampirefreaks-net:latest` with the built-in `GITHUB_TOKEN`. The repo
+  is public so the package is public; the droplet pulls it without credentials. (We moved
+  off the DO registry after it hit its storage quota.)
 - Redeploy: `git push` (CI rebuilds), then on the droplet
   `cd /opt/vf && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml run --rm migrate && docker compose -f docker-compose.prod.yml up -d`.
   SSH as `root@<droplet-ip>` (the account's deploy keys are authorized).
@@ -107,13 +111,15 @@ detail in `deploy/README.md` and `docs/sessions/001-...`.
   the ProfileBody container clips and isolates. Freeform HTML profiles (PRD Phase 5) are
   still deferred to a separate-origin sandbox and are not rendered.
 - Blocks are enforced on messaging, rating, commenting, and friend requests.
-- The DO token in GitHub Actions is account-scoped; rotate to a registry-scoped token
-  when one is available. The droplet pulls with read-only registry credentials.
+- Photo uploads go server to Spaces with a hand-rolled SigV4 PUT (no AWS SDK), using a
+  bucket-scoped Spaces key in the droplet env. The image package on GHCR is public, so no
+  registry credentials sit on the droplet.
 
 ## Known gaps and next steps
 
-- Photo galleries on Spaces (PRD Phase 2 media): `/[username]/gallery` and the PICS nav are
-  placeholders. Needs presigned uploads, thumbnails, EXIF strip, and `SPACES_KEY/SECRET`.
+- Photo galleries are live on Spaces (upload, set-as-avatar, delete, lightbox), and the
+  avatar shows on the profile header. Still to do: EXIF stripping, thumbnails, photo
+  ratings, and reaping deleted objects from the bucket.
 - Bands, profile music player, events and RSVPs (PRD Phase 4): nav stubs in place.
 - Moderation is built: members report profiles/journals/posts/cults, staff work the
   queue at `/admin` (resolve, dismiss, remove, ban), all audit-logged. Make the first
