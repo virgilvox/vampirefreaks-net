@@ -33,3 +33,14 @@
     outline-offset: 2px;
   }
 }
+
+/* One page-heading style for every in-shell page, so the app reads as one site
+   instead of mixing dense and oversized headings. */
+@layer components {
+  .vf-page-title {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    line-height: 1.1;
+    color: var(--color-text);
+  }
+}

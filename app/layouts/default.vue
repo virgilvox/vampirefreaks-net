@@ -110,10 +110,15 @@
     </div>
 
     <footer class="vf-footer">
-      <NuxtLink to="/about">About</NuxtLink>
-      <NuxtLink to="/guidelines">Community Guidelines</NuxtLink>
-      <NuxtLink to="/terms">Terms</NuxtLink>
-      <NuxtLink to="/privacy">Privacy</NuxtLink>
+      <nav class="vf-footer-links">
+        <NuxtLink to="/about">About</NuxtLink>
+        <NuxtLink to="/guidelines">Community Guidelines</NuxtLink>
+        <NuxtLink to="/terms">Terms</NuxtLink>
+        <NuxtLink to="/privacy">Privacy</NuxtLink>
+      </nav>
+      <a class="vf-footer-credit" href="https://hack.build" target="_blank" rel="noopener">
+        created by hack.build
+      </a>
       <a
         class="vf-footer-gh"
         href="https://github.com/virgilvox/vampirefreaks-net"
@@ -256,7 +261,8 @@ async function logout(): Promise<void> {
   color: var(--color-muted);
 }
 
-/* Main nav */
+/* Main nav. Below 640px it stays one strip and scrolls sideways rather than
+   wrapping into ragged rows. */
 .vf-mainnav {
   max-width: 1040px;
   margin: 0 auto;
@@ -266,6 +272,16 @@ async function logout(): Promise<void> {
   gap: 0.1rem;
   padding: 0 0.5rem 0.4rem;
 }
+@media (max-width: 640px) {
+  .vf-mainnav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .vf-quick {
+    display: none;
+  }
+}
 .vf-mainnav a {
   font-size: 0.74rem;
   font-weight: 700;
@@ -274,6 +290,7 @@ async function logout(): Promise<void> {
   text-decoration: none;
   padding: 0.2rem 0.55rem;
   border-radius: var(--radius-block);
+  white-space: nowrap;
 }
 .vf-mainnav a:hover {
   color: var(--color-accent-text);
@@ -293,9 +310,17 @@ async function logout(): Promise<void> {
   grid-template-columns: 1fr;
   gap: 0.6rem;
 }
+/* On narrow screens the page content comes first; the member sidebar and the
+   rails drop below it instead of burying the page under a long link list. */
+.vf-main {
+  order: -1;
+}
 @media (min-width: 900px) {
   .vf-body {
     grid-template-columns: 190px minmax(0, 1fr) 190px;
+  }
+  .vf-main {
+    order: 0;
   }
 }
 .vf-col {
@@ -424,8 +449,14 @@ async function logout(): Promise<void> {
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+  justify-content: space-between;
   padding: 0.6rem 0.75rem;
   font-size: 0.75rem;
+}
+.vf-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 .vf-footer a {
   color: var(--color-muted);
@@ -434,8 +465,10 @@ async function logout(): Promise<void> {
 .vf-footer a:hover {
   color: var(--color-accent);
 }
+.vf-footer-credit {
+  color: var(--color-muted);
+}
 .vf-footer-gh {
-  margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;

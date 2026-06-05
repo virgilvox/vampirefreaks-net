@@ -1,7 +1,7 @@
 <template>
   <section class="mx-auto flex max-w-lg flex-col gap-6">
     <div>
-      <h1 class="font-display text-3xl font-bold">Claim your name</h1>
+      <h1 class="vf-page-title">Claim your name</h1>
       <p class="text-muted">
         Pick a handle and set up the basics. You can change everything but the handle later.
       </p>

@@ -1,6 +1,6 @@
 <template>
   <section class="mx-auto flex max-w-2xl flex-col gap-4">
-    <h1 class="font-display text-3xl font-bold">Terms of Service</h1>
+    <h1 class="vf-page-title">Terms of Service</h1>
     <p class="text-muted">Draft. Review with counsel before public launch.</p>
     <p>
       By using vampirefreaks.net you agree to follow the

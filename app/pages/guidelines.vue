@@ -1,6 +1,6 @@
 <template>
   <section class="mx-auto flex max-w-2xl flex-col gap-4">
-    <h1 class="font-display text-3xl font-bold">Community Guidelines</h1>
+    <h1 class="vf-page-title">Community Guidelines</h1>
     <p>A few rules keep this place worth being in.</p>
     <ul class="vf-list">
       <li>No harassment, hate, or targeting of any person or group.</li>

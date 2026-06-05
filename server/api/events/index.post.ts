@@ -27,6 +27,9 @@ export default defineEventHandler(async (event) => {
   if (!startsAt)
     throw createError({ statusCode: 400, statusMessage: "A valid start date is required" })
   const endsAt = parseDate(body?.endsAt)
+  if (endsAt && endsAt < startsAt) {
+    throw createError({ statusCode: 400, statusMessage: "The end is before the start" })
+  }
 
   const str = (v: unknown, max: number): string | null =>
     typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null
@@ -41,7 +44,7 @@ export default defineEventHandler(async (event) => {
       city: str(body?.city, 120),
       startsAt,
       endsAt,
-      url: str(body?.url, 500),
+      url: safeHttpUrl(body?.url),
     })
     .returning()
   setResponseStatus(event, 201)
@@ -52,4 +55,16 @@ function parseDate(v: unknown): Date | null {
   if (typeof v !== "string" || !v) return null
   const d = new Date(v)
   return Number.isNaN(d.getTime()) ? null : d
+}
+
+// Accept only http(s) links, so a stored url cannot become a javascript: or
+// data: vector when rendered as an anchor on the event page.
+export function safeHttpUrl(v: unknown): string | null {
+  if (typeof v !== "string" || !v.trim()) return null
+  try {
+    const u = new URL(v.trim())
+    return u.protocol === "http:" || u.protocol === "https:" ? u.toString().slice(0, 500) : null
+  } catch {
+    return null
+  }
 }

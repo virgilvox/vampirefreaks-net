@@ -321,6 +321,50 @@ if (!databaseUrl) {
       expect(full.comments).toHaveLength(1)
     })
 
+    it("lets only the owner edit or delete a journal, and 404s for a stranger", async () => {
+      const author = await member("jown")
+      const stranger = await member("jstr")
+      const create = await fetch("/api/journals", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: author.cookie },
+        body: JSON.stringify({ title: "mine", body: "x", visibility: "public" }),
+      })
+      const entry = (await create.json()) as { id: string }
+
+      // A stranger gets 404 (not 403, so ownership is not leaked) and the entry is unchanged.
+      const strangerPatch = await fetch(`/api/journals/${entry.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: stranger.cookie },
+        body: JSON.stringify({ title: "hijacked" }),
+      })
+      expect(strangerPatch.status).toBe(404)
+      const strangerDelete = await fetch(`/api/journals/${entry.id}`, {
+        method: "DELETE",
+        headers: { cookie: stranger.cookie },
+      })
+      expect(strangerDelete.status).toBe(404)
+
+      const stillThere = (await (await fetch(`/api/journals/${entry.id}`)).json()) as {
+        title: string
+      }
+      expect(stillThere.title).toBe("mine")
+
+      // The owner can edit, then delete.
+      const ownerPatch = await fetch(`/api/journals/${entry.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: author.cookie },
+        body: JSON.stringify({ title: "renamed" }),
+      })
+      expect(ownerPatch.status).toBe(200)
+      const ownerDelete = await fetch(`/api/journals/${entry.id}`, {
+        method: "DELETE",
+        headers: { cookie: author.cookie },
+      })
+      expect(ownerDelete.status).toBe(200)
+      const gone = await fetch(`/api/journals/${entry.id}`)
+      expect(gone.status).toBe(404)
+    })
+
     it("runs a forum thread with a reply, and locking stops new posts", async () => {
       // Boards are seeded or staff-made; the e2e database has none, so insert
       // one directly, then drive it through the public endpoints.
@@ -460,6 +504,63 @@ if (!databaseUrl) {
         headers: { cookie: joiner.cookie },
       })
       expect(res.status).toBe(403)
+    })
+
+    it("gates cult member management to the owner and keeps memberCount honest", async () => {
+      const owner = await member("mowner")
+      const { slug } = (await (
+        await fetch("/api/cults", {
+          method: "POST",
+          headers: { "content-type": "application/json", cookie: owner.cookie },
+          body: JSON.stringify({ name: `Managed Cult ${stamp}`, joinPolicy: "open" }),
+        })
+      ).json()) as { slug: string }
+
+      const m1 = await member("mmember1")
+      const m2 = await member("mmember2")
+      await fetch(`/api/cults/${slug}/join`, { method: "POST", headers: { cookie: m1.cookie } })
+      await fetch(`/api/cults/${slug}/join`, { method: "POST", headers: { cookie: m2.cookie } })
+
+      // A plain member cannot promote anyone.
+      const memberPromote = await fetch(`/api/cults/${slug}/members/${m2.username}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: m1.cookie },
+        body: JSON.stringify({ action: "promote" }),
+      })
+      expect(memberPromote.status).toBe(403)
+
+      // The owner promotes m1 to moderator.
+      const promote = await fetch(`/api/cults/${slug}/members/${m1.username}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: owner.cookie },
+        body: JSON.stringify({ action: "promote" }),
+      })
+      expect(promote.status).toBe(200)
+
+      // A moderator cannot remove another moderator; promote m2 first, then m1 (mod) tries.
+      await fetch(`/api/cults/${slug}/members/${m2.username}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: owner.cookie },
+        body: JSON.stringify({ action: "promote" }),
+      })
+      const modRemoveMod = await fetch(`/api/cults/${slug}/members/${m2.username}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: m1.cookie },
+        body: JSON.stringify({ action: "remove" }),
+      })
+      expect(modRemoveMod.status).toBe(403)
+
+      // The owner removes m2, and memberCount drops from 3 to 2.
+      const before = (await (await fetch(`/api/cults/${slug}`)).json()) as { memberCount: number }
+      expect(before.memberCount).toBe(3)
+      const remove = await fetch(`/api/cults/${slug}/members/${m2.username}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: owner.cookie },
+        body: JSON.stringify({ action: "remove" }),
+      })
+      expect(remove.status).toBe(200)
+      const after = (await (await fetch(`/api/cults/${slug}`)).json()) as { memberCount: number }
+      expect(after.memberCount).toBe(2)
     })
 
     it("blocking stops rating and messaging, and unblocking restores them", async () => {

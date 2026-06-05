@@ -1,7 +1,7 @@
 <template>
   <section class="flex flex-col gap-6">
     <div>
-      <h1 class="font-display text-3xl font-bold">Leaderboards</h1>
+      <h1 class="vf-page-title">Leaderboards</h1>
       <p class="text-muted">
         Rated by the community. A profile needs at least five ratings to chart.
       </p>

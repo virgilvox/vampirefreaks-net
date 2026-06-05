@@ -57,17 +57,23 @@ export default defineEventHandler(async (event) => {
     ? captionPart.data.toString("utf8").trim().slice(0, 300) || null
     : null
 
+  // The first photo is always the avatar; a later upload can ask to become the
+  // avatar with a primary flag, so the editor sets an avatar in one request.
+  const primaryPart = parts?.find((p) => p.name === "primary")
+  const wantPrimary = primaryPart?.data?.toString("utf8") === "true"
+  const isPrimary = count.length === 0 || wantPrimary
+
   const key = `photos/${userId}/${crypto.randomUUID()}.${detected.ext}`
   const url = await uploadToSpaces(key, detected.contentType, file.data)
 
-  const isPrimary = count.length === 0
   const created = await db.transaction(async (tx) => {
+    if (isPrimary) {
+      await tx.update(photos).set({ isPrimary: false }).where(eq(photos.userId, userId))
+    }
     const [row] = await tx
       .insert(photos)
       .values({ userId, objectKey: key, url, caption, isPrimary })
       .returning()
-    // The first photo is the avatar: point the profile at it so the header
-    // actually renders the image instead of the initial.
     if (isPrimary && row) {
       await tx.update(profiles).set({ avatarPhotoId: row.id }).where(eq(profiles.userId, userId))
     }

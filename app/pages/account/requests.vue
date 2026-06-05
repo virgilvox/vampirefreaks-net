@@ -1,6 +1,6 @@
 <template>
   <section class="flex flex-col gap-6">
-    <h1 class="font-display text-3xl font-bold">Friend requests</h1>
+    <h1 class="vf-page-title">Friend requests</h1>
 
     <UiCard title="Waiting on you">
       <p v-if="data.incoming.length === 0" class="text-muted">No incoming requests.</p>

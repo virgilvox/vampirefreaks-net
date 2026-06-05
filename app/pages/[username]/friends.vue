@@ -1,7 +1,7 @@
 <template>
   <section class="flex flex-col gap-6">
     <div class="flex items-center justify-between">
-      <h1 class="font-display text-3xl font-bold">{{ username }}'s friends</h1>
+      <h1 class="vf-page-title">{{ username }}'s friends</h1>
       <NuxtLink :to="`/${username}`"
         ><UiButton variant="surface">Back to profile</UiButton></NuxtLink
       >

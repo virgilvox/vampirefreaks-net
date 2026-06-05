@@ -1,6 +1,6 @@
 <template>
   <section class="mx-auto flex max-w-2xl flex-col gap-4">
-    <h1 class="font-display text-3xl font-bold">About</h1>
+    <h1 class="vf-page-title">About</h1>
     <p>
       vampirefreaks.net brings back the VampireFreaks social network from the 2003 to 2008 era:
       profiles, ratings, cults, forums, journals, photos, messages, bands, and events. There is no

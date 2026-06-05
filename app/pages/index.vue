@@ -32,9 +32,17 @@
       </VfPanel>
 
       <VfPanel title="Featured Cult">
-        <div class="vf-feat">
+        <div v-if="featuredCult" class="vf-feat">
+          <NuxtLink :to="`/cults/${featuredCult.slug}`" class="vf-feat-img" aria-hidden="true">
+            <span>&#10013;</span>
+          </NuxtLink>
+          <NuxtLink :to="`/cults/${featuredCult.slug}`" class="vf-feat-name">{{
+            featuredCult.name
+          }}</NuxtLink>
+        </div>
+        <div v-else class="vf-feat">
           <span class="vf-feat-img vf-feat-soon" aria-hidden="true">&#10013;</span>
-          <span class="vf-feat-name vf-muted">Cults land soon</span>
+          <span class="vf-feat-name vf-muted">No cults yet</span>
         </div>
       </VfPanel>
     </div>
@@ -117,13 +125,18 @@ type Status = {
   displayName: string | null
 }
 
-const [{ data: home }, { data: journals }, { data: activity }] = await Promise.all([
-  useFetch<{ newest: Member[] }>("/api/home", { default: () => ({ newest: [] }) }),
-  useFetch<Journal[]>("/api/feed/journals", { default: () => [] }),
-  useFetch<Status[]>("/api/feed/site", { default: () => [] }),
-])
+type Cult = { slug: string; name: string }
+const [{ data: home }, { data: journals }, { data: activity }, { data: cults }] = await Promise.all(
+  [
+    useFetch<{ newest: Member[] }>("/api/home", { default: () => ({ newest: [] }) }),
+    useFetch<Journal[]>("/api/feed/journals", { default: () => [] }),
+    useFetch<Status[]>("/api/feed/site", { default: () => [] }),
+    useFetch<Cult[]>("/api/cults", { default: () => [] }),
+  ],
+)
 
 const featuredMember = computed<Member | null>(() => home.value?.newest?.[0] ?? null)
+const featuredCult = computed<Cult | null>(() => cults.value?.[0] ?? null)
 
 const tabs = [
   { key: "news", label: "Site News" },

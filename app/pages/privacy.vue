@@ -1,6 +1,6 @@
 <template>
   <section class="mx-auto flex max-w-2xl flex-col gap-4">
-    <h1 class="font-display text-3xl font-bold">Privacy Policy</h1>
+    <h1 class="vf-page-title">Privacy Policy</h1>
     <p class="text-muted">Draft. Review with counsel before public launch.</p>
     <p>
       The site stores the account details you provide (email, username, profile fields) and the

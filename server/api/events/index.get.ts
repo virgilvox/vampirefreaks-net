@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm"
+import { and, asc, desc, eq, sql } from "drizzle-orm"
 import { db } from "../../db/client"
 import { eventRsvps, events, profiles } from "../../db/schema"
 
@@ -24,12 +24,15 @@ export default defineEventHandler(async (event) => {
   }
 
   const cityFilter = city ? eq(events.city, city) : undefined
+  // An event counts as upcoming until it ends, so something happening right now
+  // stays at the top instead of dropping into past the moment it starts.
+  const endRef = sql`coalesce(${events.endsAt}, ${events.startsAt})`
 
   const upcoming = await db
     .select(cols)
     .from(events)
     .leftJoin(profiles, eq(profiles.userId, events.creatorId))
-    .where(and(gte(events.startsAt, now), cityFilter))
+    .where(and(sql`${endRef} >= ${now}`, cityFilter))
     .orderBy(asc(events.startsAt))
     .limit(100)
 
@@ -37,7 +40,7 @@ export default defineEventHandler(async (event) => {
     .select(cols)
     .from(events)
     .leftJoin(profiles, eq(profiles.userId, events.creatorId))
-    .where(and(lt(events.startsAt, now), cityFilter))
+    .where(and(sql`${endRef} < ${now}`, cityFilter))
     .orderBy(desc(events.startsAt))
     .limit(50)
 

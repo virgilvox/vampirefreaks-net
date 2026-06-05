@@ -1,7 +1,7 @@
 <template>
   <section class="flex flex-col gap-6">
     <div class="flex items-center justify-between">
-      <h1 class="font-display text-3xl font-bold">Inbox</h1>
+      <h1 class="vf-page-title">Inbox</h1>
       <NuxtLink to="/messages/sent"><UiButton variant="surface">Sent</UiButton></NuxtLink>
     </div>
 

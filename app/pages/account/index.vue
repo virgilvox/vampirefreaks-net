@@ -1,7 +1,7 @@
 <template>
   <section class="flex flex-col gap-6">
     <div>
-      <h1 class="font-display text-3xl font-bold">Account</h1>
+      <h1 class="vf-page-title">Account</h1>
       <p class="text-muted">Signed in as {{ user?.email }}.</p>
     </div>
 
@@ -190,14 +190,10 @@ async function uploadAvatar(): Promise<void> {
   try {
     const fd = new FormData()
     fd.append("file", avatarFile.value)
-    const photo = await $fetch<{ id: string; isPrimary: boolean }>("/api/photos", {
-      method: "POST",
-      body: fd,
-    })
-    // A later upload is not primary by default, so make this one the avatar.
-    if (!photo.isPrimary) {
-      await $fetch(`/api/photos/${photo.id}`, { method: "PATCH", body: { isPrimary: true } })
-    }
+    // The primary flag makes the upload set the avatar in one server call, so
+    // there is no upload-succeeded-but-avatar-unset window.
+    fd.append("primary", "true")
+    await $fetch("/api/photos", { method: "POST", body: fd })
     avatarFile.value = null
     if (avatarInput.value) avatarInput.value.value = ""
     await Promise.all([refreshAvatar(), refreshProfile()])
