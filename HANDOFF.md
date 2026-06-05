@@ -48,6 +48,9 @@ The social network (Postgres via Drizzle, schema as code):
 - Events: members post events (title, start, end, venue, city, link, details); the listing
   splits upcoming from past and filters by city; the detail page takes going/interested
   RSVPs; the creator or staff can delete.
+- Music: members upload audio tracks (sniffed, stored in Spaces), set one as their profile
+  song (played on the profile with no autoplay), and propose band pages that go public only
+  after staff approval, with the owner attaching their own tracks.
 - The shell: the early-2000s VampireFreaks 3-column layout (blackletter wordmark, live
   FREAK COUNT and online count, dense magenta nav, left member sidebar, center content,
   right Top Cults / Top Journals / Newest rails) and the oversaturated homepage.
@@ -130,10 +133,14 @@ detail in `deploy/README.md` and `docs/sessions/001-...`.
 - Photo galleries are live on Spaces (upload, set-as-avatar, delete, lightbox), and the
   avatar shows on the profile header. Still to do: EXIF stripping, thumbnails, photo
   ratings, and reaping deleted objects from the bucket.
-- Events are live (Phase 4). Still to do: event flyer images, and an upcoming-events panel
-  on the homepage.
-- Bands and the profile music player (PRD Phase 4): MUSIC nav is still a stub. Band pages
-  plus song upload (reuse the Spaces SigV4 pipeline for audio) and a profile player are next.
+- Phase 4 is done (events and music/bands). Smaller follow-ups: event flyer images, an
+  upcoming-events panel on the homepage, band/song deletion reaping Spaces objects, EXIF
+  stripping and thumbnails for photos, and photo ratings.
+- Phase 5 (sandboxed freeform-HTML profiles behind the age gate) is the last PRD phase and
+  is not started; the structured customization path covers v1.
+- Other deferred audit items: full UiCard to VfPanel unification, lightbox focus-trap, the
+  rating-widget radiogroup, a full Content-Security-Policy, cult-scoped forum boards, and
+  enforcing the under-18 messaging restrictions.
 - Moderation is built: members report profiles/journals/posts/cults, staff work the
   queue at `/admin` (resolve, dismiss, remove, ban), all audit-logged. Make the first
   moderator with `npm run admin:grant -- <email>`. Still open: report controls on

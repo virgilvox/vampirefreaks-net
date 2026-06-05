@@ -115,6 +115,14 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Tests: e2e for cult member-management authorization (owner-only promote/demote, mods can't remove mods, memberCount honest) and journal owner-only edit/delete. 58 unit/component pass; CI green; deployed and verified (favicon/og 200, footer credit live).
 - Deferred from the audits (noted, not yet done): full UiCard -> VfPanel unification, lightbox focus-trap + close button, rating-widget radiogroup/keyboard, extracting detectImage/SigV4 for unit tests, a PNG OG image (SVG renders in many contexts but Facebook/Twitter prefer PNG), and the bands/music feature.
 
+### PNG OG image + Phase 4 finish (music and bands)
+
+- OG image is now a PNG on the CDN: rasterized og.svg with rsvg-convert to 1200x630, uploaded to Spaces (public-read) at og.png, og:image/twitter:image point at the CDN URL with width/height set.
+- Music (Phase 4 done): song upload (magic-byte sniff for mp3/ogg/wav/m4a, Spaces, capped + rate limited), Your Music page (`/account/music`), set-profile-song (ownership-checked), and the profile `VfMusicPlayer` (visible control, no autoplay).
+- Bands: propose a band (stays unapproved and hidden until staff approve), band page with tracks, owner attaches their own tracks, staff approve from the page (audit-logged). MUSIC nav is real.
+- Tests: e2e for the band approval gate and the profile-song ownership check; song upload requires auth. 58 unit/component pass; CI green; deployed and verified (/bands, /account/music gated, og png live).
+- The full PRD feature set is now built: profiles, ratings, leaderboards, friends, messages, journals, status/activity, photos+avatars, forum, cults, moderation, events, music/bands.
+
 ### Phases remaining
 
 - Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.
