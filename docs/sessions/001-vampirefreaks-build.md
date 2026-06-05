@@ -75,6 +75,13 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Tests: sanitizer hardening unit tests; e2e for cults (open join, approval gate, closed reject, owner-cannot-leave) and blocking (stops rating + messaging, unblock restores). 60 unit/component pass; CI e2e green.
 - HANDOFF.md rewritten for vampirefreaks (was still the JIG template handoff).
 
+### Moderation and reporting (Phase 3 safety loop)
+
+- Members report a profile, journal, forum post, or cult via a `VfReportButton`; the report snapshots a label + link (migration 0002 adds `reports.target_label/target_href`) so the queue survives content deletion.
+- Staff queue at `/admin` (gated by the `admin` role middleware): resolve, dismiss, remove content (`/api/admin/remove`, fixes thread counts + auto-resolves related reports), or ban a reported member via the better-auth admin endpoint. Every action is audit-logged.
+- `npm run admin:grant -- <email>` promotes the first moderator (roles are not self-serve). To make yourself staff on the live site: SSH to the droplet, `cd /opt/vf`, then `docker compose -f docker-compose.prod.yml run --rm -e DATABASE_URL=postgres://vf:<pw>@db:5432/vf app npm run admin:grant -- you@email` (or run the SQL `update "user" set role='admin' where email=...`).
+- e2e covers reporting, the staff-only gate (non-admin 403), and staff removal. 60 unit/component pass; CI e2e green. Deployed and verified.
+
 ### Phases remaining
 
 - Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.

@@ -115,8 +115,10 @@ detail in `deploy/README.md` and `docs/sessions/001-...`.
 - Photo galleries on Spaces (PRD Phase 2 media): `/[username]/gallery` and the PICS nav are
   placeholders. Needs presigned uploads, thumbnails, EXIF strip, and `SPACES_KEY/SECRET`.
 - Bands, profile music player, events and RSVPs (PRD Phase 4): nav stubs in place.
-- Moderation: the reporting queue and the `/admin` tools are stubs; an account needs
-  `role=admin` set (via the better-auth admin API or SQL) to use staff actions.
+- Moderation is built: members report profiles/journals/posts/cults, staff work the
+  queue at `/admin` (resolve, dismiss, remove, ban), all audit-logged. Make the first
+  moderator with `npm run admin:grant -- <email>`. Still open: report controls on
+  messages and events, and surfacing each member's report history.
 - Cult-scoped forum boards: the unified `boards` mechanism supports `scope=cult` with a
   `cultId`, but cults do not yet create or surface their own boards.
 - Age gate: birthdate and an adult-or-not flag are collected at onboarding but the
