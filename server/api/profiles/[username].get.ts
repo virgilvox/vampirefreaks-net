@@ -1,6 +1,14 @@
+import { alias } from "drizzle-orm/pg-core"
 import { and, eq, or } from "drizzle-orm"
 import { db } from "../../db/client"
-import { blocks, friendships, profileRatings, profiles, user as userTable } from "../../db/schema"
+import {
+  blocks,
+  friendships,
+  photos,
+  profileRatings,
+  profiles,
+  user as userTable,
+} from "../../db/schema"
 import { optionalUser } from "../../utils/session"
 import { publicAverage } from "../../utils/profile"
 
@@ -9,6 +17,7 @@ import { publicAverage } from "../../utils/profile"
 // score and the friendship state, so the header can render the right actions.
 export default defineEventHandler(async (event) => {
   const username = getRouterParam(event, "username")?.toLowerCase() ?? ""
+  const avatarPhoto = alias(photos, "avatar_photo")
   const [row] = await db
     .select({
       userId: profiles.userId,
@@ -28,6 +37,7 @@ export default defineEventHandler(async (event) => {
       fontChoice: profiles.fontChoice,
       customCss: profiles.customCss,
       avatarPhotoId: profiles.avatarPhotoId,
+      avatarUrl: avatarPhoto.url,
       bannerPhotoId: profiles.bannerPhotoId,
       profileSongId: profiles.profileSongId,
       indexable: profiles.indexable,
@@ -38,6 +48,7 @@ export default defineEventHandler(async (event) => {
     })
     .from(profiles)
     .innerJoin(userTable, eq(userTable.id, profiles.userId))
+    .leftJoin(avatarPhoto, eq(avatarPhoto.id, profiles.avatarPhotoId))
     .where(eq(profiles.username, username))
 
   if (!row) throw createError({ statusCode: 404, statusMessage: "No such member" })

@@ -560,6 +560,16 @@ if (!databaseUrl) {
       expect(after.some((r) => r.id === mine?.id)).toBe(false)
     })
 
+    it("serves an empty gallery and requires auth to upload", async () => {
+      const m = await member("gallery")
+      const list = (await (await fetch(`/api/profiles/${m.username}/photos`)).json()) as unknown[]
+      expect(Array.isArray(list)).toBe(true)
+      expect(list).toHaveLength(0)
+
+      const anon = await fetch("/api/photos", { method: "POST" })
+      expect(anon.status).toBe(401)
+    })
+
     it("creates an organization when the Origin header is present", async () => {
       const cookie = await signUp("org")
       const res = await fetch("/api/auth/organization/create", {

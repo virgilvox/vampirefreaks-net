@@ -24,6 +24,22 @@
           :custom-css="profile.customCss"
         />
 
+        <VfPanel v-if="photos && photos.length" title="Pics" flush>
+          <template #action>
+            <NuxtLink :to="`/${profile.username}/gallery`" class="vf-more">gallery</NuxtLink>
+          </template>
+          <div class="vf-pics-strip">
+            <NuxtLink
+              v-for="p in photos.slice(0, 8)"
+              :key="p.id"
+              :to="`/${profile.username}/gallery`"
+              class="vf-pics-thumb"
+            >
+              <img :src="p.url" :alt="p.caption || 'photo'" />
+            </NuxtLink>
+          </div>
+        </VfPanel>
+
         <VfPanel title="Journal" flush>
           <template #action>
             <NuxtLink :to="`/${profile.username}/journal`" class="vf-more">all entries</NuxtLink>
@@ -120,6 +136,7 @@ type PublicProfile = {
   bgImageUrl?: string | null
   fontChoice?: string | null
   customCss?: string | null
+  avatarUrl?: string | null
   indexable: boolean
   average?: number | null
   ratingCount?: number | null
@@ -151,6 +168,12 @@ type JournalRow = {
 const { data: journals } = await useFetch<JournalRow[]>(
   () => `/api/profiles/${username.value}/journals`,
   { default: () => [], headers: cookieHeaders },
+)
+
+type PhotoRow = { id: string; url: string; caption: string | null }
+const { data: photos } = await useFetch<PhotoRow[]>(
+  () => `/api/profiles/${username.value}/photos`,
+  { default: () => [] },
 )
 
 const isOwner = computed(() => profile.value?.friendStatus === "self")
@@ -244,6 +267,19 @@ async function send(): Promise<void> {
   color: var(--color-muted);
   font-style: italic;
   font-size: 0.85rem;
+}
+.vf-pics-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr));
+  gap: 0.3rem;
+  padding: 0.6rem;
+}
+.vf-pics-thumb img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-block);
+  display: block;
 }
 .vf-profile-grid {
   display: grid;

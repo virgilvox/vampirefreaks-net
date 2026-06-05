@@ -58,6 +58,8 @@ services:
       SPACES_REGION: sfo3
       SPACES_ENDPOINT: https://sfo3.digitaloceanspaces.com
       SPACES_CDN_BASE: https://vampirefreaks.sfo3.cdn.digitaloceanspaces.com
+      SPACES_KEY: ${SPACES_KEY}
+      SPACES_SECRET: ${SPACES_SECRET}
     expose:
       - "3000"
 

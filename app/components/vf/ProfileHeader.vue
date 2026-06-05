@@ -1,6 +1,12 @@
 <template>
   <div class="vf-ph">
-    <div class="vf-ph-avatar" aria-hidden="true">{{ initial }}</div>
+    <img
+      v-if="profile.avatarUrl"
+      :src="profile.avatarUrl"
+      :alt="`${profile.username} avatar`"
+      class="vf-ph-avatar vf-ph-avatar-img"
+    />
+    <div v-else class="vf-ph-avatar" aria-hidden="true">{{ initial }}</div>
     <div class="vf-ph-main">
       <h1 class="vf-ph-name">{{ profile.displayName || profile.username }}</h1>
       <p class="vf-ph-handle">@{{ profile.username }}</p>
@@ -56,6 +62,7 @@ type PublicProfile = {
   displayName?: string | null
   tagline?: string | null
   location?: string | null
+  avatarUrl?: string | null
   leaderboardBucket: string
   average?: number | null
   ratingCount?: number | null
@@ -99,6 +106,9 @@ const initial = computed(() =>
   color: var(--color-accent-text);
   background: var(--color-accent);
   border-radius: var(--radius-block);
+}
+.vf-ph-avatar-img {
+  object-fit: cover;
 }
 .vf-ph-main {
   flex: 1;
