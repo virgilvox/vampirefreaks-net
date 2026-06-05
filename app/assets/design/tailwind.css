@@ -1,0 +1,34 @@
+/* Design layer entry. Order matters: fonts and the token contract load first,
+   then Tailwind reads the @theme tokens to generate token-backed utilities,
+   then each theme file redefines the token values it wants to change. */
+@import "./fonts.css";
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./themes/punk-zine.css";
+@import "./themes/industrial.css";
+@import "./themes/paper-teal.css";
+
+/* Block shadow as a custom utility so it references the token at use-site and
+   follows theme overrides, instead of baking the default like the built-in
+   shadow-* utilities would. */
+@utility shadow-block {
+  box-shadow: var(--shadow-block);
+}
+
+/* App-wide baseline. Everything here pulls from tokens, never literals. */
+@layer base {
+  html {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}

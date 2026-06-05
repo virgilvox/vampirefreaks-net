@@ -1,0 +1,3 @@
+/* Every typeface a theme can reach, loaded once. A theme picks from these
+   through the --font-* tokens, so switching aesthetic never touches a font tag. */
+@import url("https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap");

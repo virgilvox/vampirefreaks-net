@@ -1,0 +1,22 @@
+/* paper-teal: Instrument Serif, bone, teal, and amber, soft edges. */
+:root[data-theme="paper-teal"] {
+  --color-bg: #f5f1e8;
+  --color-surface: #fdfbf4;
+  --color-surface-2: #ece5d4;
+  --color-text: #2a2622;
+  --color-muted: #7a7468;
+  --color-border: #d8cfbc;
+  --color-accent: #0f766e;
+  --color-accent-text: #fdfbf4;
+  --color-danger: #b91c1c;
+  --color-danger-text: #fdfbf4;
+  --color-success: #0f766e;
+  --color-ring: #d99a2b;
+
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-body: "Instrument Serif", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-block: 0.75rem;
+  --shadow-block: 0 6px 24px -8px rgb(15 118 110 / 0.25);
+}

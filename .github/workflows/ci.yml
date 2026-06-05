@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: jig
+          POSTGRES_PASSWORD: jig
+          POSTGRES_DB: jig
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jig -d jig"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://jig:jig@localhost:5432/jig
+      BETTER_AUTH_SECRET: ci-secret-not-for-production
+      # The e2e suite signs up many users from one host; the limiter would block
+      # that. Off in CI only, never in production.
+      DISABLE_RATE_LIMIT: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+      - run: npm run test:e2e

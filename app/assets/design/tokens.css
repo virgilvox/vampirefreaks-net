@@ -1,0 +1,41 @@
+/* The token contract. One flat set of names every component reads from.
+   Declared inside @theme so Tailwind generates token-backed utilities
+   (bg-surface, text-text, border-border, font-display, rounded-block,
+   shadow-block, and so on). Themes redefine these same names; utilities
+   reference them through var(), so a theme swap retints everything with
+   zero component edits.
+
+   These values are the neutral default, used when no data-theme is set.
+   See ./themes for the shipped aesthetics. */
+@theme {
+  /* Color roles */
+  --color-bg: #ffffff;
+  --color-surface: #f7f7f8;
+  --color-surface-2: #ededf0;
+  --color-text: #18181b;
+  --color-muted: #6b7280;
+  --color-border: #d4d4d8;
+  --color-accent: #4f46e5;
+  --color-accent-text: #ffffff;
+  --color-danger: #dc2626;
+  --color-danger-text: #ffffff;
+  --color-success: #16a34a;
+  --color-ring: #4f46e5;
+
+  /* Typography */
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Radius */
+  --radius-block: 0.5rem;
+}
+
+/* Shadow stays a plain custom property, deliberately outside @theme. Tailwind v4
+   inlines --shadow-* theme values into its shadow composition, which would
+   freeze this default and ignore the per-theme overrides. Kept as a var and
+   exposed through the shadow-block utility in tailwind.css, so a theme swap
+   retints it like every other token. */
+:root {
+  --shadow-block: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}

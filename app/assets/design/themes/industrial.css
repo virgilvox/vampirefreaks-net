@@ -1,0 +1,22 @@
+/* industrial: Space Mono and JetBrains Mono, teal and orange on charcoal, flat surfaces. */
+:root[data-theme="industrial"] {
+  --color-bg: #1a1c1e;
+  --color-surface: #232629;
+  --color-surface-2: #2d3135;
+  --color-text: #e6e8ea;
+  --color-muted: #9aa0a6;
+  --color-border: #3a3f44;
+  --color-accent: #14b8a6;
+  --color-accent-text: #07140f;
+  --color-danger: #f97316;
+  --color-danger-text: #1a1004;
+  --color-success: #14b8a6;
+  --color-ring: #14b8a6;
+
+  --font-display: "Space Mono", ui-monospace, monospace;
+  --font-body: "Space Mono", ui-monospace, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-block: 0.125rem;
+  --shadow-block: none;
+}

@@ -1,0 +1,22 @@
+/* punk-zine: Permanent Marker, hot pink, paper cream, hard block shadows. */
+:root[data-theme="punk-zine"] {
+  --color-bg: #f4ecd8;
+  --color-surface: #fffdf5;
+  --color-surface-2: #f0e6cc;
+  --color-text: #111111;
+  --color-muted: #5b5648;
+  --color-border: #111111;
+  --color-accent: #fe0386;
+  --color-accent-text: #ffffff;
+  --color-danger: #d12000;
+  --color-danger-text: #ffffff;
+  --color-success: #2c7a2c;
+  --color-ring: #fe0386;
+
+  --font-display: "Permanent Marker", cursive;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-block: 0;
+  --shadow-block: 6px 6px 0 #111111;
+}
