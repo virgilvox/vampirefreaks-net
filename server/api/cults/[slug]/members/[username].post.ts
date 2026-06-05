@@ -53,7 +53,11 @@ export default defineEventHandler(async (event) => {
     return { ok: true }
   }
 
-  // remove
+  // remove. A moderator can remove members but only the owner can remove another
+  // moderator, so mods cannot demote each other by removal.
+  if (target.role === "moderator" && actorRole !== "owner") {
+    throw createError({ statusCode: 403, statusMessage: "Only the owner can remove a moderator" })
+  }
   await db.transaction(async (tx) => {
     await tx
       .delete(cultMembers)

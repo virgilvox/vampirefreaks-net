@@ -40,8 +40,10 @@ useHead({ title: "Friend requests" })
 type Req = { id: string; otherUsername: string; otherDisplayName: string | null }
 type FriendData = { friends: Req[]; incoming: Req[]; outgoing: Req[] }
 
+const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
 const { data, refresh } = await useFetch<FriendData>("/api/friends", {
   default: () => ({ friends: [], incoming: [], outgoing: [] }),
+  headers: cookieHeaders,
 })
 
 async function respond(username: string, action: "accept" | "decline"): Promise<void> {

@@ -28,10 +28,14 @@ type Entry = {
   commentCount: number
   createdAt: string
 }
+// Forward the cookie on SSR so the owner and friends see friends-only entries on
+// first paint, matching the public profile page.
+const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
 const { data: entries } = await useFetch<Entry[]>(
   () => `/api/profiles/${username.value}/journals`,
   {
     default: () => [],
+    headers: cookieHeaders,
   },
 )
 </script>

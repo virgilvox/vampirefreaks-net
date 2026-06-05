@@ -1,3 +1,4 @@
+import { and, eq } from "drizzle-orm"
 import { db } from "../../db/client"
 import { reports } from "../../db/schema"
 import { requireProfile } from "../../utils/profile"
@@ -25,6 +26,24 @@ export default defineEventHandler(async (event) => {
 
   const resolved = await resolveReportTarget(targetType, targetId)
   if (!resolved) throw createError({ statusCode: 404, statusMessage: "No such content" })
+
+  // One open report per reporter per target: re-reporting the same thing is a
+  // no-op rather than another row flooding the queue.
+  const [dup] = await db
+    .select({ id: reports.id })
+    .from(reports)
+    .where(
+      and(
+        eq(reports.reporterId, userId),
+        eq(reports.targetType, targetType),
+        eq(reports.targetId, targetId),
+        eq(reports.status, "open"),
+      ),
+    )
+  if (dup) {
+    setResponseStatus(event, 201)
+    return { ok: true }
+  }
 
   await db.insert(reports).values({
     reporterId: userId,

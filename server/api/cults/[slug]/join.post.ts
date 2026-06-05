@@ -25,16 +25,28 @@ export default defineEventHandler(async (event) => {
   }
 
   const status = cult.joinPolicy === "approval" ? "pending" : "active"
-  await db.transaction(async (tx) => {
-    await tx.insert(cultMembers).values({ cultId: cult.id, userId, role: "member", status })
+  const inserted = await db.transaction(async (tx) => {
+    // onConflictDoNothing makes a double-click a clean no-op instead of a unique
+    // violation, and the count only bumps when a row actually landed.
+    const rows = await tx
+      .insert(cultMembers)
+      .values({ cultId: cult.id, userId, role: "member", status })
+      .onConflictDoNothing({ target: [cultMembers.cultId, cultMembers.userId] })
+      .returning({ id: cultMembers.id })
+    if (rows.length === 0) return false
     if (status === "active") {
       await tx
         .update(cults)
         .set({ memberCount: sql`${cults.memberCount} + 1` })
         .where(eq(cults.id, cult.id))
     }
+    return true
   })
 
+  if (!inserted) {
+    const current = await membership(cult.id, userId)
+    return { status: current?.status ?? "active" }
+  }
   setResponseStatus(event, 201)
   return { status }
 })
