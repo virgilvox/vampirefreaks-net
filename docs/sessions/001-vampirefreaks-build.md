@@ -90,6 +90,16 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Registry: the shared DO container registry hit its storage quota (push denied, deployed tag went stale). Switched image builds to GHCR (`ghcr.io/virgilvox/vampirefreaks-net:latest`, public package, built-in GITHUB_TOKEN, only `:latest` tag). Droplet `APP_IMAGE` repointed to GHCR; redeployed and verified the new image is serving.
 - Note: the live owner account is `virgilvox` (Moheeb). Make it staff with `npm run admin:grant -- <email>` to use the moderation queue.
 
+### Third audit, avatar fix, gallery hardening
+
+- Made `virgilvox` (the owner account) staff via SQL; the Moderation queue is now reachable for them.
+- Fixed the reported avatar bug: the first uploaded photo was flagged primary but the upload never set `profiles.avatarPhotoId`, so the header kept showing the letter square. Now set in the same transaction; backfilled the live row so the existing photo shows immediately. Deleting the avatar promotes the newest remaining photo (transactional).
+- Security (from the audit): upload now sniffs real image magic bytes and derives the stored type/extension from them (client content-type no longer trusted), plus a per-user photo cap and tighter rate limit. Baseline security headers (nosniff, X-Frame-Options, Referrer-Policy) on every response via routeRules.
+- Avatars now render in the leaderboard, homepage panels, featured member, and friends grid (these returned a dead `avatarPhotoId` before; now resolve `avatarUrl`).
+- Polish: lightbox is keyboard-accessible (focus/Escape/role) and uses a new `--color-overlay` token; reserved photo-rating/album schema documented; dropped an unused export; onboarding title reworded.
+- Voice/routing re-audited: no em dashes anywhere, the `[username]/account` index-route fix holds, no broken links.
+- Tests: e2e for set-as-avatar and avatar promotion on delete. 58 unit/component pass; CI green; deployed and verified live.
+
 ### Phases remaining
 
 - Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.

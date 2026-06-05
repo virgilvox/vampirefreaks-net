@@ -42,7 +42,8 @@ The social network (Postgres via Drizzle, schema as code):
 - Blocking: block/unblock cuts messaging, rating, commenting, and friend requests both
   ways and clears any friendship.
 - Photo galleries: upload to Spaces, set a photo as the avatar, caption, delete, lightbox.
-  The avatar renders on the profile header and a pics strip shows on the profile.
+  The first upload becomes the avatar automatically. Avatars render on the profile header,
+  the leaderboards, the homepage panels, the featured member, and the friends grid.
 - The shell: the early-2000s VampireFreaks 3-column layout (blackletter wordmark, live
   FREAK COUNT and online count, dense magenta nav, left member sidebar, center content,
   right Top Cults / Top Journals / Newest rails) and the oversaturated homepage.
@@ -112,8 +113,13 @@ detail in `deploy/README.md` and `docs/sessions/001-...`.
   still deferred to a separate-origin sandbox and are not rendered.
 - Blocks are enforced on messaging, rating, commenting, and friend requests.
 - Photo uploads go server to Spaces with a hand-rolled SigV4 PUT (no AWS SDK), using a
-  bucket-scoped Spaces key in the droplet env. The image package on GHCR is public, so no
-  registry credentials sit on the droplet.
+  bucket-scoped Spaces key in the droplet env. The upload sniffs the real image magic bytes
+  and derives the stored type from them, so the client content-type cannot smuggle a
+  non-image; objects store one of four image types. The image package on GHCR is public, so
+  no registry credentials sit on the droplet.
+- Baseline security headers ship on every response (nosniff, X-Frame-Options SAMEORIGIN,
+  Referrer-Policy). A full Content-Security-Policy is still a follow-up; profile inline
+  styles need to be accounted for first.
 
 ## Known gaps and next steps
 
