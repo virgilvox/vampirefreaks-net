@@ -1,7 +1,7 @@
 import { alias } from "drizzle-orm/pg-core"
 import { and, eq, or } from "drizzle-orm"
 import { db } from "../../../db/client"
-import { friendships, profiles } from "../../../db/schema"
+import { friendships, photos, profiles } from "../../../db/schema"
 import { getProfileByUsername } from "../../../utils/profile"
 
 // Public list of a member's accepted friends, each with their handle. Reads the
@@ -12,11 +12,12 @@ export default defineEventHandler(async (event) => {
   if (!target) throw createError({ statusCode: 404, statusMessage: "No such member" })
 
   const friendProfile = alias(profiles, "friend_profile")
+  const friendAvatar = alias(photos, "friend_avatar")
   const rows = await db
     .select({
       username: friendProfile.username,
       displayName: friendProfile.displayName,
-      avatarPhotoId: friendProfile.avatarPhotoId,
+      avatarUrl: friendAvatar.url,
     })
     .from(friendships)
     .innerJoin(
@@ -32,6 +33,7 @@ export default defineEventHandler(async (event) => {
         ),
       ),
     )
+    .leftJoin(friendAvatar, eq(friendAvatar.id, friendProfile.avatarPhotoId))
     .where(
       and(
         eq(friendships.status, "accepted"),

@@ -12,7 +12,13 @@
     <ul v-else class="vf-friend-grid">
       <li v-for="f in friends" :key="f.username">
         <NuxtLink :to="`/${f.username}`" class="vf-friend">
-          <span class="vf-friend-avatar" aria-hidden="true">{{
+          <img
+            v-if="f.avatarUrl"
+            :src="f.avatarUrl"
+            :alt="`${f.username} avatar`"
+            class="vf-friend-avatar vf-friend-avatar-img"
+          />
+          <span v-else class="vf-friend-avatar" aria-hidden="true">{{
             (f.displayName || f.username).charAt(0).toUpperCase()
           }}</span>
           <span class="vf-friend-name">{{ f.displayName || f.username }}</span>
@@ -27,7 +33,7 @@ const route = useRoute()
 const username = computed(() => String(route.params.username))
 useHead(() => ({ title: `${username.value}'s friends` }))
 
-type Friend = { username: string; displayName: string | null }
+type Friend = { username: string; displayName: string | null; avatarUrl: string | null }
 const { data: friends } = await useFetch<Friend[]>(
   () => `/api/profiles/${username.value}/friends`,
   {
@@ -68,6 +74,9 @@ const { data: friends } = await useFetch<Friend[]>(
   font-family: var(--font-display);
   background: var(--color-surface-2);
   border-radius: var(--radius-block);
+}
+.vf-friend-avatar-img {
+  object-fit: cover;
 }
 .vf-friend-name {
   font-size: 0.85rem;

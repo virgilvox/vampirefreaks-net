@@ -570,6 +570,48 @@ if (!databaseUrl) {
       expect(anon.status).toBe(401)
     })
 
+    it("makes a photo the avatar and promotes the next when it is deleted", async () => {
+      const m = await member("avatar")
+      // Insert two photos directly (upload needs Spaces, which CI does not have).
+      const pool = new Pool({ connectionString: databaseUrl })
+      const { rows } = await pool.query("select user_id from profiles where username = $1", [
+        m.username,
+      ])
+      const uid = rows[0].user_id as string
+      const p1 = `ph1-${stamp}`
+      const p2 = `ph2-${stamp}`
+      await pool.query(
+        `insert into photos (id, user_id, object_key, url, is_primary) values
+         ($1,$3,'k1','https://cdn.test/1.png',false),
+         ($2,$3,'k2','https://cdn.test/2.png',false)`,
+        [p1, p2, uid],
+      )
+      await pool.end()
+
+      // Set p1 as the avatar.
+      const setP = await fetch(`/api/photos/${p1}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: m.cookie },
+        body: JSON.stringify({ isPrimary: true }),
+      })
+      expect(setP.status).toBe(200)
+      let prof = (await (await fetch(`/api/profiles/${m.username}`)).json()) as {
+        avatarUrl: string | null
+      }
+      expect(prof.avatarUrl).toBe("https://cdn.test/1.png")
+
+      // Deleting the avatar promotes the other photo.
+      const del = await fetch(`/api/photos/${p1}`, {
+        method: "DELETE",
+        headers: { cookie: m.cookie },
+      })
+      expect(del.status).toBe(200)
+      prof = (await (await fetch(`/api/profiles/${m.username}`)).json()) as {
+        avatarUrl: string | null
+      }
+      expect(prof.avatarUrl).toBe("https://cdn.test/2.png")
+    })
+
     it("creates an organization when the Origin header is present", async () => {
       const cookie = await signUp("org")
       const res = await fetch("/api/auth/organization/create", {

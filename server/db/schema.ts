@@ -331,7 +331,8 @@ export const blocks = pgTable(
   ],
 )
 
-// Optional gallery grouping.
+// Optional gallery grouping. Reserved: the schema and the photos.albumId
+// reference exist, but albums have no API or UI in v1.
 export const albums = pgTable(
   "albums",
   {
@@ -348,7 +349,9 @@ export const albums = pgTable(
 )
 
 // Gallery images. Bytes live in Spaces; only the object key and public URL are
-// stored here. Photos draw ratings of their own.
+// stored here. The ratingSum, ratingCount, and thumbnailUrl columns and the
+// photoRatings table below are reserved: photo rating and thumbnails are not
+// built in v1.
 export const photos = pgTable(
   "photos",
   {

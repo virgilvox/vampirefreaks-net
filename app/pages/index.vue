@@ -3,8 +3,19 @@
     <div class="vf-featured">
       <VfPanel title="Featured Member">
         <div v-if="featuredMember" class="vf-feat">
-          <NuxtLink :to="`/${featuredMember.username}`" class="vf-feat-img" aria-hidden="true">
-            {{ (featuredMember.displayName || featuredMember.username).charAt(0).toUpperCase() }}
+          <NuxtLink
+            :to="`/${featuredMember.username}`"
+            class="vf-feat-img"
+            :class="{ 'vf-feat-img-photo': featuredMember.avatarUrl }"
+          >
+            <img
+              v-if="featuredMember.avatarUrl"
+              :src="featuredMember.avatarUrl"
+              :alt="`${featuredMember.username} avatar`"
+            />
+            <span v-else aria-hidden="true">{{
+              (featuredMember.displayName || featuredMember.username).charAt(0).toUpperCase()
+            }}</span>
           </NuxtLink>
           <NuxtLink :to="`/${featuredMember.username}`" class="vf-feat-name">
             {{ featuredMember.displayName || featuredMember.username }}
@@ -87,7 +98,7 @@ useHead({
   ],
 })
 
-type Member = { username: string; displayName: string | null }
+type Member = { username: string; displayName: string | null; avatarUrl?: string | null }
 type Journal = {
   id: string
   title: string
@@ -170,6 +181,15 @@ function when(v: string): string {
   background: var(--color-accent);
   border-radius: var(--radius-block);
   text-decoration: none;
+  overflow: hidden;
+}
+.vf-feat-img-photo {
+  background: var(--color-surface-2);
+}
+.vf-feat-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .vf-feat-soon {
   background: var(--color-surface-2);

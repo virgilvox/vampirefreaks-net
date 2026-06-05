@@ -46,4 +46,5 @@
   --color-topbar-to: var(--color-surface-2);
   --color-accent-bright: var(--color-accent);
   --color-texture: rgb(0 0 0 / 0.02);
+  --color-overlay: rgb(0 0 0 / 0.7);
 }

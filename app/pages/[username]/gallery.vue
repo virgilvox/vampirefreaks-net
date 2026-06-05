@@ -44,7 +44,17 @@
       <p v-else class="vf-empty">No photos yet.</p>
     </VfPanel>
 
-    <div v-if="lightbox" class="vf-lightbox" @click="lightbox = null">
+    <div
+      v-if="lightbox"
+      ref="lightboxEl"
+      class="vf-lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Photo"
+      tabindex="-1"
+      @click="lightbox = null"
+      @keydown.esc="lightbox = null"
+    >
       <img :src="lightbox" alt="photo" />
     </div>
   </section>
@@ -76,6 +86,14 @@ const file = ref<File | null>(null)
 const caption = ref("")
 const uploading = ref(false)
 const lightbox = ref<string | null>(null)
+const lightboxEl = ref<HTMLElement | null>(null)
+
+// Focus the lightbox when it opens so Escape and a click anywhere dismiss it.
+watch(lightbox, async (url) => {
+  if (!url) return
+  await nextTick()
+  lightboxEl.value?.focus()
+})
 
 function onPick(e: Event): void {
   file.value = (e.target as HTMLInputElement).files?.[0] ?? null
@@ -198,9 +216,12 @@ async function remove(id: string): Promise<void> {
   z-index: 50;
   display: grid;
   place-items: center;
-  background: rgb(0 0 0 / 0.85);
+  background: var(--color-overlay);
   padding: 2rem;
   cursor: zoom-out;
+}
+.vf-lightbox:focus {
+  outline: none;
 }
 .vf-lightbox img {
   max-width: 100%;

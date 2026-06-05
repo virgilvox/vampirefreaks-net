@@ -25,7 +25,7 @@ export type SpaceConfig = {
 
 // Returns the config when storage is wired, or null so handlers can fail with a
 // clear "not configured" message rather than a signing crash.
-export function spaceConfig(): SpaceConfig | null {
+function spaceConfig(): SpaceConfig | null {
   const key = process.env.SPACES_KEY
   const secret = process.env.SPACES_SECRET
   if (!key || !secret) return null

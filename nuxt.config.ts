@@ -37,4 +37,19 @@ export default defineNuxtConfig({
   nitro: {
     preset: "node-server",
   },
+
+  // Baseline security headers on every response. nosniff stops content-type
+  // sniffing, the frame rules block clickjacking of the app, and the referrer
+  // policy keeps full URLs off cross-origin requests. A full CSP is a later
+  // pass: profile customization renders inline styles that a strict policy would
+  // need to account for.
+  routeRules: {
+    "/**": {
+      headers: {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+      },
+    },
+  },
 })

@@ -71,7 +71,7 @@
 import type { Profile } from "../../server/db/schema"
 
 definePageMeta({ middleware: "auth" })
-useHead({ title: "Welcome" })
+useHead({ title: "Claim your name" })
 
 const { push } = useToast()
 

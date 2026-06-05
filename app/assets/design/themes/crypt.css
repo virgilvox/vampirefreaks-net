@@ -34,4 +34,5 @@
   --color-topbar-to: #060608;
   --color-accent-bright: #ff63b4;
   --color-texture: rgb(255 255 255 / 0.015);
+  --color-overlay: rgb(0 0 0 / 0.85);
 }

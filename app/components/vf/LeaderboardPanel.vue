@@ -3,6 +3,12 @@
     <ol class="vf-board-list">
       <li v-for="(row, i) in rows" :key="row.username" class="vf-board-row">
         <span class="vf-rank">{{ i + 1 }}</span>
+        <img
+          v-if="row.avatarUrl"
+          :src="row.avatarUrl"
+          :alt="`${row.username} avatar`"
+          class="vf-board-avatar"
+        />
         <NuxtLink :to="`/${row.username}`" class="vf-board-name">
           {{ row.displayName || row.username }}
         </NuxtLink>
@@ -19,6 +25,7 @@
 type Row = {
   username: string
   displayName?: string | null
+  avatarUrl?: string | null
   average?: number | null
   ratingCount?: number | null
 }
@@ -33,6 +40,13 @@ withDefaults(defineProps<{ rows: Row[]; showAverage?: boolean }>(), { showAverag
   margin: 0;
   padding: 0;
   list-style: none;
+}
+.vf-board-avatar {
+  width: 1.2rem;
+  height: 1.2rem;
+  object-fit: cover;
+  border-radius: var(--radius-block);
+  align-self: center;
 }
 .vf-board-row {
   display: flex;

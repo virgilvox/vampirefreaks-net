@@ -1,6 +1,7 @@
-import { and, desc, gte, inArray, sql } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm"
 import { db } from "../db/client"
-import { profiles } from "../db/schema"
+import { photos, profiles } from "../db/schema"
 
 // The era's leaderboards. A 5-rating floor keeps a single 10 from topping the
 // board; rows order by average descending. newest ignores ratings and orders by
@@ -14,11 +15,12 @@ export default defineEventHandler(async (event) => {
   // NULLIF guards the newest tab, where members can have zero ratings: dividing
   // by it yields null rather than a division-by-zero error.
   const avg = sql<number>`(${profiles.ratingSum}::float / NULLIF(${profiles.ratingCount}, 0))`
+  const avatar = alias(photos, "lb_avatar")
 
   const base = {
     username: profiles.username,
     displayName: profiles.displayName,
-    avatarPhotoId: profiles.avatarPhotoId,
+    avatarUrl: avatar.url,
     leaderboardBucket: profiles.leaderboardBucket,
     ratingCount: profiles.ratingCount,
     average: sql<number>`round(${avg}::numeric, 1)`,
@@ -26,7 +28,12 @@ export default defineEventHandler(async (event) => {
   }
 
   if (bucket === "newest") {
-    return db.select(base).from(profiles).orderBy(desc(profiles.createdAt)).limit(PAGE)
+    return db
+      .select(base)
+      .from(profiles)
+      .leftJoin(avatar, eq(avatar.id, profiles.avatarPhotoId))
+      .orderBy(desc(profiles.createdAt))
+      .limit(PAGE)
   }
 
   const buckets =
@@ -35,6 +42,7 @@ export default defineEventHandler(async (event) => {
   return db
     .select(base)
     .from(profiles)
+    .leftJoin(avatar, eq(avatar.id, profiles.avatarPhotoId))
     .where(
       and(inArray(profiles.leaderboardBucket, buckets), gte(profiles.ratingCount, MIN_RATINGS)),
     )
