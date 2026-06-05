@@ -66,10 +66,10 @@ async function onSubmit(): Promise<void> {
     return
   }
   await refreshNuxtData("current-session")
-  // A token means auto sign-in happened. No token means verification is
-  // required, so send them to confirm their address instead of the dashboard.
+  // A token means auto sign-in happened, so send them to claim a username. No
+  // token means verification is required, so confirm their address first.
   if (data?.token) {
-    await navigateTo("/dashboard")
+    await navigateTo("/onboarding")
   } else {
     await navigateTo(`/verify-email?email=${encodeURIComponent(email.value)}`)
   }

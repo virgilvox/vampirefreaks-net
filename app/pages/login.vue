@@ -24,14 +24,23 @@
       </UiButton>
     </form>
 
-    <div class="my-4 flex items-center gap-3 text-sm text-muted">
-      <span class="h-px flex-1 bg-border" />or<span class="h-px flex-1 bg-border" />
-    </div>
+    <template v-if="providers?.github || providers?.google || providers?.passkey">
+      <div class="my-4 flex items-center gap-3 text-sm text-muted">
+        <span class="h-px flex-1 bg-border" />or<span class="h-px flex-1 bg-border" />
+      </div>
 
-    <div class="flex flex-col gap-2">
-      <UiButton variant="surface" block @click="withGithub">Continue with GitHub</UiButton>
-      <UiButton variant="surface" block @click="withPasskey">Sign in with a passkey</UiButton>
-    </div>
+      <div class="flex flex-col gap-2">
+        <UiButton v-if="providers?.github" variant="surface" block @click="withGithub">
+          Continue with GitHub
+        </UiButton>
+        <UiButton v-if="providers?.google" variant="surface" block @click="withGoogle">
+          Continue with Google
+        </UiButton>
+        <UiButton v-if="providers?.passkey" variant="surface" block @click="withPasskey">
+          Sign in with a passkey
+        </UiButton>
+      </div>
+    </template>
 
     <template #footer>
       <div class="flex justify-between text-sm">
@@ -50,6 +59,11 @@ const email = ref("")
 const password = ref("")
 const loading = ref(false)
 const { push } = useToast()
+
+type Providers = { emailPassword: boolean; passkey: boolean; github: boolean; google: boolean }
+const { data: providers } = await useFetch<Providers>("/api/auth-providers", {
+  key: "auth-providers",
+})
 
 async function onSubmit(): Promise<void> {
   loading.value = true
@@ -70,11 +84,15 @@ async function onSubmit(): Promise<void> {
     return
   }
   await refreshNuxtData("current-session")
-  await navigateTo("/dashboard")
+  await navigateTo("/")
 }
 
 async function withGithub(): Promise<void> {
-  await authClient.signIn.social({ provider: "github", callbackURL: "/dashboard" })
+  await authClient.signIn.social({ provider: "github", callbackURL: "/" })
+}
+
+async function withGoogle(): Promise<void> {
+  await authClient.signIn.social({ provider: "google", callbackURL: "/" })
 }
 
 async function withPasskey(): Promise<void> {
@@ -89,7 +107,7 @@ async function withPasskey(): Promise<void> {
       return
     }
     await refreshNuxtData("current-session")
-    await navigateTo("/dashboard")
+    await navigateTo("/")
   } catch {
     push({ title: "Passkey sign-in cancelled", variant: "danger" })
   }

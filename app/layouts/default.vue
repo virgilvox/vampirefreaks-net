@@ -12,7 +12,7 @@
             <span>|</span>
             <NuxtLink to="/cults">Cults</NuxtLink>
             <span>|</span>
-            <NuxtLink :to="user ? '/messages' : '/login'">Messageboard</NuxtLink>
+            <NuxtLink to="/forum">Messageboard</NuxtLink>
           </nav>
           <div class="vf-counts">
             <span class="vf-freakcount"
@@ -54,6 +54,7 @@
             <ul class="vf-side-links">
               <li><NuxtLink to="/messages">Inbox</NuxtLink></li>
               <li><NuxtLink to="/account/requests">Friend Requests</NuxtLink></li>
+              <li><NuxtLink to="/forum">Messageboard</NuxtLink></li>
               <li><NuxtLink :to="`/${profile.username}/journal`">My Journal</NuxtLink></li>
               <li><NuxtLink :to="`/${profile.username}`">My Profile</NuxtLink></li>
               <li><NuxtLink to="/cults">My Cults</NuxtLink></li>
@@ -123,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-const { user, refresh } = await useCurrentUser()
+const { refresh } = await useCurrentUser()
 const { profile } = await useProfile()
 
 type Chrome = {

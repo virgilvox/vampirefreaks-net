@@ -321,6 +321,63 @@ if (!databaseUrl) {
       expect(full.comments).toHaveLength(1)
     })
 
+    it("runs a forum thread with a reply, and locking stops new posts", async () => {
+      // Boards are seeded or staff-made; the e2e database has none, so insert
+      // one directly, then drive it through the public endpoints.
+      const pool = new Pool({ connectionString: databaseUrl })
+      const slug = `gen${stamp}`
+      await pool.query(
+        `insert into boards (id, scope, slug, name, description, sort_order) values ($1, 'site', $2, 'General', '', 0)`,
+        [`board_${stamp}`, slug],
+      )
+
+      const boardList = (await (await fetch("/api/boards")).json()) as Array<{ slug: string }>
+      expect(boardList.some((b) => b.slug === slug)).toBe(true)
+
+      const author = await member("fauthor")
+      const create = await fetch("/api/threads", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: author.cookie },
+        body: JSON.stringify({ boardSlug: slug, title: "first thread", body: "opening post" }),
+      })
+      expect(create.status).toBe(201)
+      const thread = (await create.json()) as { id: string }
+
+      const replier = await member("freplier")
+      const reply = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: replier.cookie },
+        body: JSON.stringify({ threadId: thread.id, body: "second post" }),
+      })
+      expect(reply.status).toBe(201)
+
+      const full = (await (await fetch(`/api/threads/${thread.id}`)).json()) as {
+        postCount: number
+        posts: unknown[]
+      }
+      expect(full.postCount).toBe(2)
+      expect(full.posts).toHaveLength(2)
+
+      // A non-staff member cannot lock a thread.
+      const denied = await fetch(`/api/threads/${thread.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: author.cookie },
+        body: JSON.stringify({ locked: true }),
+      })
+      expect(denied.status).toBe(403)
+
+      // Lock it directly, then a reply is rejected.
+      await pool.query(`update threads set locked = true where id = $1`, [thread.id])
+      await pool.end()
+
+      const blocked = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: replier.cookie },
+        body: JSON.stringify({ threadId: thread.id, body: "too late" }),
+      })
+      expect(blocked.status).toBe(403)
+    })
+
     it("posts a status that surfaces in the site feed", async () => {
       const a = await member("st")
       const post = await fetch("/api/status", {

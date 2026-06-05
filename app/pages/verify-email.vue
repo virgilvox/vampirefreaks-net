@@ -16,7 +16,7 @@
 
     <template #footer>
       <div class="flex justify-between text-sm">
-        <NuxtLink to="/dashboard" class="text-accent underline">Go to dashboard</NuxtLink>
+        <NuxtLink to="/" class="text-accent underline">Go home</NuxtLink>
         <NuxtLink to="/login" class="text-accent underline">Back to log in</NuxtLink>
       </div>
     </template>
@@ -43,7 +43,7 @@ async function resend(): Promise<void> {
   sending.value = true
   const { error } = await authClient.sendVerificationEmail({
     email: email.value,
-    callbackURL: "/dashboard",
+    callbackURL: "/",
   })
   sending.value = false
   if (error) {
