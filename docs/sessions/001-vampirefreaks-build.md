@@ -100,6 +100,12 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Voice/routing re-audited: no em dashes anywhere, the `[username]/account` index-route fix holds, no broken links.
 - Tests: e2e for set-as-avatar and avatar promotion on delete. 58 unit/component pass; CI green; deployed and verified live.
 
+### Events + avatar upload in the editor
+
+- Events (Phase 4): `/api/events` (list split upcoming/past, city filter, going counts), create/get/patch/delete (creator or staff), `/events/[id]/rsvp` (going/interested/none, one per member). Pages `/events` (list + create dialog + filter) and `/events/[id]` (detail + RSVP + delete). EVENTS nav now real. e2e covers create, RSVP count, upcoming listing, creator-only delete.
+- Avatar upload added to the profile editor (`/account`): posts through the photo pipeline and sets the result primary, with a live preview. Reuses the existing endpoints, no new backend.
+- 58 unit/component pass; CI green; deployed and verified (`/events` 200, gated POST 401).
+
 ### Phases remaining
 
 - Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.

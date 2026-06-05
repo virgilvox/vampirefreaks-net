@@ -42,8 +42,12 @@ The social network (Postgres via Drizzle, schema as code):
 - Blocking: block/unblock cuts messaging, rating, commenting, and friend requests both
   ways and clears any friendship.
 - Photo galleries: upload to Spaces, set a photo as the avatar, caption, delete, lightbox.
-  The first upload becomes the avatar automatically. Avatars render on the profile header,
-  the leaderboards, the homepage panels, the featured member, and the friends grid.
+  The first upload becomes the avatar automatically, and the profile editor has its own
+  avatar upload. Avatars render on the profile header, the leaderboards, the homepage
+  panels, the featured member, and the friends grid.
+- Events: members post events (title, start, end, venue, city, link, details); the listing
+  splits upcoming from past and filters by city; the detail page takes going/interested
+  RSVPs; the creator or staff can delete.
 - The shell: the early-2000s VampireFreaks 3-column layout (blackletter wordmark, live
   FREAK COUNT and online count, dense magenta nav, left member sidebar, center content,
   right Top Cults / Top Journals / Newest rails) and the oversaturated homepage.
@@ -126,7 +130,10 @@ detail in `deploy/README.md` and `docs/sessions/001-...`.
 - Photo galleries are live on Spaces (upload, set-as-avatar, delete, lightbox), and the
   avatar shows on the profile header. Still to do: EXIF stripping, thumbnails, photo
   ratings, and reaping deleted objects from the bucket.
-- Bands, profile music player, events and RSVPs (PRD Phase 4): nav stubs in place.
+- Events are live (Phase 4). Still to do: event flyer images, and an upcoming-events panel
+  on the homepage.
+- Bands and the profile music player (PRD Phase 4): MUSIC nav is still a stub. Band pages
+  plus song upload (reuse the Spaces SigV4 pipeline for audio) and a profile player are next.
 - Moderation is built: members report profiles/journals/posts/cults, staff work the
   queue at `/admin` (resolve, dismiss, remove, ban), all audit-logged. Make the first
   moderator with `npm run admin:grant -- <email>`. Still open: report controls on
