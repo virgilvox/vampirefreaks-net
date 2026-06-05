@@ -17,7 +17,7 @@ export function useToast(): {
   push: (toast: ToastInput) => void
   dismiss: (id: number) => void
 } {
-  const toasts = useState<Toast[]>("jig-toasts", () => [])
+  const toasts = useState<Toast[]>("vf-toasts", () => [])
 
   function push(toast: ToastInput): void {
     counter += 1

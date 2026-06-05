@@ -161,8 +161,8 @@ async function logout(): Promise<void> {
   min-height: 100vh;
   background-color: var(--color-bg);
   background-image:
-    repeating-linear-gradient(45deg, rgb(255 255 255 / 0.015) 0 1px, transparent 1px 7px),
-    repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.015) 0 1px, transparent 1px 7px);
+    repeating-linear-gradient(45deg, var(--color-texture) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(-45deg, var(--color-texture) 0 1px, transparent 1px 7px);
   color: var(--color-text);
   display: flex;
   flex-direction: column;
@@ -171,7 +171,7 @@ async function logout(): Promise<void> {
 /* Top bar */
 .vf-top {
   border-bottom: 2px solid var(--color-accent);
-  background: linear-gradient(180deg, #0c0c10, #060608);
+  background: linear-gradient(180deg, var(--color-topbar-from), var(--color-topbar-to));
 }
 .vf-top-inner {
   max-width: 1040px;
@@ -187,7 +187,7 @@ async function logout(): Promise<void> {
   font-family: var(--font-display);
   font-size: 2.4rem;
   line-height: 1;
-  color: #f3eef5;
+  color: var(--color-logo);
   text-decoration: none;
   letter-spacing: 0.01em;
 }
@@ -233,7 +233,7 @@ async function logout(): Promise<void> {
   letter-spacing: 0.03em;
 }
 .vf-freakcount b {
-  color: #ff63b4;
+  color: var(--color-accent-bright);
 }
 .vf-online {
   border: 1px solid var(--color-border);

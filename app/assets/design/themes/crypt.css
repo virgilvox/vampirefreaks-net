@@ -25,4 +25,13 @@
 
   --radius-block: 0.125rem;
   --shadow-block: 0 0 0 1px #2b2230, 0 2px 8px rgb(0 0 0 / 0.6);
+
+  /* Shell chrome accents: the near-white wordmark, the darker-than-surface top
+     bar gradient, the brighter magenta for the freak count, and the metal-hatch
+     texture tint. */
+  --color-logo: #f3eef5;
+  --color-topbar-from: #0c0c10;
+  --color-topbar-to: #060608;
+  --color-accent-bright: #ff63b4;
+  --color-texture: rgb(255 255 255 / 0.015);
 }

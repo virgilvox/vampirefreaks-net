@@ -77,7 +77,7 @@
 
 <script setup lang="ts">
 useHead({
-  title: "vampirefreaks — goth and industrial network",
+  title: "vampirefreaks, goth and industrial network",
   meta: [
     {
       name: "description",

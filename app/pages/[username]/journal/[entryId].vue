@@ -87,8 +87,12 @@ type Entry = {
   comments: Comment[]
 }
 
+// Forward the cookie on SSR so a friends-only or private entry the owner is
+// viewing renders on the server instead of flashing "No such entry".
+const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
 const { data: entry, refresh } = await useFetch<Entry | null>(`/api/journals/${entryId}`, {
   default: () => null,
+  headers: cookieHeaders,
 })
 
 useHead(() => ({ title: entry.value?.title || "Journal" }))

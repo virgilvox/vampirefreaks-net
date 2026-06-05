@@ -1,70 +1,131 @@
-# JIG handoff
+# vampirefreaks.net handoff
 
-Snapshot of where the template stands and how to work on it. Per-session detail lives in `docs/sessions/`.
+A revival of the VampireFreaks social network era (2003 to 2008), built on the JIG
+stack and live at https://vampirefreaks.net. Per-session detail lives in
+`docs/sessions/`. This file is the standing snapshot: what works, how to run it,
+how it deploys, and what is left.
 
 ## Status
 
-Feature-complete against the original spec (v0 through v0.2) plus extras. Everything below is built, typed, and covered by tests, and CI is green on `main`.
+Live and green on `main`. Built so far: the full identity and social loop, journals,
+status/activity, the site forum, and cults. CI (lint, typecheck, unit/component,
+build, e2e against real Postgres) passes on every push; the image is built in CI and
+the droplet pulls it.
 
 ## What works
 
-Auth (better-auth on a Nitro route):
+Auth (better-auth on a Nitro catch-all):
 
-- Email and password, with password reset and email verification through Resend (console fallback in dev).
-- GitHub OAuth (Google switches on when its keys are set).
-- Passkeys (WebAuthn): register and manage on `/account`, sign in on `/login`.
-- Server sessions, a route-guard middleware, and a production guard that refuses to boot without `BETTER_AUTH_SECRET`.
+- Email and password; password reset and email verification through Resend (console
+  fallback in dev). Verification is off until Resend is configured.
+- GitHub and Google OAuth switch on only when their keys are set. The login page asks
+  `/api/auth-providers` and shows only the methods that actually work.
+- Passkeys (WebAuthn): manage on `/account`, sign in on `/login`.
+- Admin plugin: staff `role` on the user table, used by the `requireAdmin` gate and the
+  `admin` route middleware. No paid tiers, no premium; moderation applies to everyone.
 
-Data (Postgres via Drizzle):
+The social network (Postgres via Drizzle, schema as code):
 
-- Schema as code, readable migrations, an idempotent seed.
-- Two example tables (`categories`, `notes`) behind a notes CRUD page at `/dashboard`, scoped per user with category-ownership checks.
-
-Organizations (multi-tenant primitives, available but not forced):
-
-- Create, list, set active. Invite by email, accept or decline (in-app and via the email link), list and remove members, change roles.
-- Tables: `organization`, `member`, `invitation`, plus `session.active_organization_id`.
+- Profiles and onboarding: claim a username, structured customization (colors, font,
+  background, bounded sanitized custom CSS), the public `/[username]` page.
+- Rating: 1 to 10 peer rating with denormalized aggregates, leaderboards (`/top`) with a
+  five-rating floor, opt-out that hides the number.
+- Friends: request, accept, decline, remove; mutual-request auto-accept.
+- Messages: private inbox, sent box, read receipts; block-aware.
+- Journals: create/edit/delete, public/friends/private visibility enforced server-side,
+  comments with a synced counter, the recent feed.
+- Status updates feeding the homepage activity stream.
+- Forum: site message boards, threads, posts, locked/pinned, staff pin/lock with an
+  audit-log entry.
+- Cults: browse, create, join (open/approval/closed), leave, owner/mod management
+  (approve, promote/demote, remove), member roster, member count.
+- Blocking: block/unblock cuts messaging, rating, commenting, and friend requests both
+  ways and clears any friendship.
+- The shell: the early-2000s VampireFreaks 3-column layout (blackletter wordmark, live
+  FREAK COUNT and online count, dense magenta nav, left member sidebar, center content,
+  right Top Cults / Top Journals / Newest rails) and the oversaturated homepage.
 
 Design system:
 
-- Flat token contract in `app/assets/design/tokens.css` (`--color-*`, `--font-*`, `--radius-block`, `--shadow-block`), wired into Tailwind v4 utilities.
-- Three themes (`punk-zine`, `industrial`, `paper-teal`); swap with one `data-theme` attribute. Live switcher in the UI.
-- Base components on Reka UI in `app/components/ui/`, every value from tokens.
+- Flat token contract in `app/assets/design/tokens.css`; the `crypt` theme
+  (`app/assets/design/themes/crypt.css`) is the only one that matters and is the default.
+  No theme switcher. Zero hardcoded colors in components; chrome accents are tokens.
 
-## Run it
+## Run it locally
 
 ```bash
-cp .env.example .env          # set BETTER_AUTH_SECRET
+cp .env.example .env          # set BETTER_AUTH_SECRET; SPACES_* optional until media lands
 npm install
-docker compose up -d db
+docker compose up -d db       # needs a working Docker daemon
 npm run db:migrate
+npm run db:seed               # seeds only the forum boards, no fake accounts
 npm run dev                   # http://localhost:3000
 ```
 
-Sign up, land on the dashboard. Then `npm run db:seed` to attach sample notes to your account. Test theme switching on the landing page, passkeys on `/account`, and organizations on `/organizations`.
+Sign up, claim a username at `/onboarding`, then explore. The seed creates the four
+forum boards and nothing else, so every account and post is real.
 
 ## Tests
 
-- `npm run test`: unit (`test/unit`) and component (`test/components`), no infrastructure. 28 tests.
-- `npm run test:e2e`: real server plus real Postgres, no mocks. 8 tests. Needs a database:
-  `docker compose up -d db`, then `DATABASE_URL=... BETTER_AUTH_SECRET=... DISABLE_RATE_LIMIT=true npm run test:e2e`.
-- CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests, build, then e2e against a Postgres service on every push.
+- `npm run test`: unit (`test/unit`) and component (`test/components`), no infrastructure.
+  60 tests.
+- `npm run test:e2e`: boots the real server against real Postgres, applies the migration,
+  and exercises the social loop, journals, forum, cults, blocking, and org primitives.
+  Run with a database up: `docker compose up -d db`, then
+  `DATABASE_URL=... BETTER_AUTH_SECRET=... DISABLE_RATE_LIMIT=true npm run test:e2e`.
+- CI (`.github/workflows/ci.yml`) runs all of the above on every push.
 
-## Conventions (see CLAUDE.md)
+## Deploy (live)
 
-- No AI attribution anywhere, including commits. Conventional commits, atomic where possible.
-- Prose rules: no em dashes, no emojis, no filler vocabulary, lead with the point.
-- Components read only from design tokens, never literal colors or fonts.
-- Server owns db and auth; the app reaches them only through API routes.
-- Tests first from here on.
+Architecture: a small DigitalOcean droplet runs the app via docker compose; the image is
+built in GitHub Actions and pushed to the DO container registry; Postgres runs on the
+droplet with its data on an attached block-storage volume; Caddy terminates TLS. Full
+detail in `deploy/README.md` and `docs/sessions/001-...`.
+
+- Droplet `vampirefreaks` (sfo3, s-1vcpu-1gb), project lumen. Volume `vfdata` at
+  `/mnt/vfdata`. Stack in `/opt/vf/docker-compose.prod.yml`.
+- Image build: `.github/workflows/deploy.yml` on push to `main`. Needs the repo secret
+  `DIGITALOCEAN_ACCESS_TOKEN` (set).
+- Redeploy: `git push` (CI rebuilds), then on the droplet
+  `cd /opt/vf && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml run --rm migrate && docker compose -f docker-compose.prod.yml up -d`.
+  SSH as `root@<droplet-ip>` (the account's deploy keys are authorized).
+- New migrations ship inside the image and apply via the one-shot `migrate` service on
+  redeploy.
 
 ## Environment
 
-`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `NUXT_PUBLIC_AUTH_BASE_URL`, `GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `REQUIRE_EMAIL_VERIFICATION`. `DISABLE_RATE_LIMIT` is test-only. See `.env.example`.
+`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `NUXT_PUBLIC_AUTH_BASE_URL`,
+`GITHUB_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`,
+`REQUIRE_EMAIL_VERIFICATION`, `SPACES_KEY/SECRET/BUCKET/REGION/ENDPOINT`, `SPACES_CDN_BASE`.
+`DISABLE_RATE_LIMIT` is test-only. See `.env.example`.
+
+## Security notes
+
+- Member custom CSS is sanitized on write (`server/utils/sanitize.ts`): at-rules are
+  stripped (so nothing escapes the per-profile scope), `position:fixed/sticky` removed
+  (no clickjacking overlay), url() allowlisted to the media CDN and raster data URIs, and
+  the ProfileBody container clips and isolates. Freeform HTML profiles (PRD Phase 5) are
+  still deferred to a separate-origin sandbox and are not rendered.
+- Blocks are enforced on messaging, rating, commenting, and friend requests.
+- The DO token in GitHub Actions is account-scoped; rotate to a registry-scoped token
+  when one is available. The droplet pulls with read-only registry credentials.
 
 ## Known gaps and next steps
 
-- Email delivery needs a Resend domain verified before it reaches anyone but the Resend account owner. The dev transport logs links to the console.
-- No leave-organization UI (the `leave` endpoint exists). Received-invitations list loads on mount, no live updates.
-- The example notes stay single-user by design. Scoping them to the active organization is the pattern to copy when a product needs tenancy.
-- Deploy recipe is in `docs/deploy.md`.
+- Photo galleries on Spaces (PRD Phase 2 media): `/[username]/gallery` and the PICS nav are
+  placeholders. Needs presigned uploads, thumbnails, EXIF strip, and `SPACES_KEY/SECRET`.
+- Bands, profile music player, events and RSVPs (PRD Phase 4): nav stubs in place.
+- Moderation: the reporting queue and the `/admin` tools are stubs; an account needs
+  `role=admin` set (via the better-auth admin API or SQL) to use staff actions.
+- Cult-scoped forum boards: the unified `boards` mechanism supports `scope=cult` with a
+  `cultId`, but cults do not yet create or surface their own boards.
+- Age gate: birthdate and an adult-or-not flag are collected at onboarding but the
+  stricter under-18 protections (locked-down messaging, limited discoverability) from PRD
+  section 12 are not yet enforced.
+- Denormalized counters (`journals.commentCount`, `threads.postCount`) only increment;
+  they do not decrement on a cascade delete of a commenting/posting user. Low frequency;
+  switch to count-on-read or add decrement paths when content deletion lands.
+- Rate limiting is per-process in memory; move to a shared store if running more than one
+  instance.
+- Email delivery needs a verified Resend domain before it reaches anyone but the account
+  owner.

@@ -39,4 +39,33 @@ describe("sanitizeCss", () => {
     expect(sanitizeCss(null)).toBe("")
     expect(sanitizeCss(undefined)).toBe("")
   })
+
+  it("strips at-rule blocks so unscoped selectors cannot escape", () => {
+    const out = sanitizeCss("@media all { body { display:none } } .x { color: red }")
+    expect(out.toLowerCase()).not.toContain("@media")
+    expect(out.toLowerCase()).not.toContain("body")
+    expect(out).toContain("color: red")
+  })
+
+  it("strips @supports and @layer blocks too", () => {
+    const out = sanitizeCss(
+      "@supports (display:grid) { html { background:url(http://evil) } } a{color:#fff}",
+    )
+    expect(out.toLowerCase()).not.toContain("@supports")
+    expect(out.toLowerCase()).not.toContain("html")
+    expect(out).toContain("color:#fff")
+  })
+
+  it("strips viewport-fixed positioning that would escape the container", () => {
+    const fixed = sanitizeCss(".x { position: fixed; inset: 0; }")
+    expect(fixed.toLowerCase()).not.toContain("position: fixed")
+    const sticky = sanitizeCss(".y { position:sticky; top:0 }")
+    expect(sticky.toLowerCase()).not.toContain("position:sticky")
+  })
+
+  it("excludes svg data URIs from the url allowlist", () => {
+    const out = sanitizeCss("div { background: url(data:image/svg+xml,<svg onload=alert(1)>); }")
+    expect(out).toContain("about:blank")
+    expect(out.toLowerCase()).not.toContain("svg")
+  })
 })

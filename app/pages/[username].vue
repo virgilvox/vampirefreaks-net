@@ -50,6 +50,14 @@
           </ul>
           <NuxtLink :to="`/${profile.username}/friends`" class="vf-side-link">Friends</NuxtLink>
           <NuxtLink v-if="isOwner" to="/account" class="vf-side-link">Edit profile</NuxtLink>
+          <button
+            v-if="!isOwner && canRate"
+            type="button"
+            class="vf-side-link vf-block"
+            @click="toggleBlock"
+          >
+            {{ profile.blocked ? "Unblock" : "Block" }}
+          </button>
         </UiCard>
       </aside>
     </div>
@@ -110,12 +118,18 @@ type PublicProfile = {
   ratingCount?: number | null
   viewerRating?: number | null
   friendStatus: "none" | "pending_out" | "pending_in" | "friends" | "self"
+  blocked: boolean
   createdAt: string
 }
 
+// Forward the cookie on SSR so the server read sees the viewer: their own
+// rating, friend state, and ownership render correctly on first paint instead
+// of flipping after hydration.
+const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
+
 const { data: profile, refresh } = await useFetch<PublicProfile | null>(
   () => `/api/profiles/${username.value}`,
-  { default: () => null },
+  { default: () => null, headers: cookieHeaders },
 )
 
 type JournalRow = {
@@ -129,7 +143,7 @@ type JournalRow = {
 }
 const { data: journals } = await useFetch<JournalRow[]>(
   () => `/api/profiles/${username.value}/journals`,
-  { default: () => [] },
+  { default: () => [], headers: cookieHeaders },
 )
 
 const isOwner = computed(() => profile.value?.friendStatus === "self")
@@ -179,6 +193,13 @@ async function accept(): Promise<void> {
 }
 async function unfriend(): Promise<void> {
   await $fetch(`/api/friends/${username.value}`, { method: "DELETE" }).catch(() => null)
+  await refresh()
+}
+
+async function toggleBlock(): Promise<void> {
+  if (!profile.value) return
+  const method = profile.value.blocked ? "DELETE" : "POST"
+  await $fetch(`/api/blocks/${username.value}`, { method }).catch(() => null)
   await refresh()
 }
 
@@ -247,5 +268,17 @@ async function send(): Promise<void> {
 }
 .vf-side-link:hover {
   color: var(--color-accent);
+}
+.vf-block {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: inherit;
+  color: var(--color-danger);
+}
+.vf-block:hover {
+  color: var(--color-danger);
+  text-decoration: underline;
 }
 </style>

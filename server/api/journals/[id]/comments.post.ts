@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm"
 import { db } from "../../../db/client"
 import { journalComments, journals } from "../../../db/schema"
 import { requireProfile } from "../../../utils/profile"
-import { canView } from "../../../utils/friends"
+import { canView, isBlocked } from "../../../utils/friends"
 import { enforceRateLimit } from "../../../utils/rate-limit"
 
 // Comment on an entry the member is allowed to see. The insert and the entry's
@@ -25,6 +25,9 @@ export default defineEventHandler(async (event) => {
   if (!entry) throw createError({ statusCode: 404, statusMessage: "No such entry" })
   if (!(await canView(entry.visibility, entry.userId, userId))) {
     throw createError({ statusCode: 404, statusMessage: "No such entry" })
+  }
+  if (await isBlocked(userId, entry.userId)) {
+    throw createError({ statusCode: 403, statusMessage: "Unavailable" })
   }
 
   const created = await db.transaction(async (tx) => {

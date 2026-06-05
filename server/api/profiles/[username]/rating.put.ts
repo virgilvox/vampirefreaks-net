@@ -3,6 +3,7 @@ import { db } from "../../../db/client"
 import { profileRatings, profiles } from "../../../db/schema"
 import { requireProfile } from "../../../utils/profile"
 import { enforceRateLimit } from "../../../utils/rate-limit"
+import { isBlocked } from "../../../utils/friends"
 
 // Rate a member's profile 1 to 10. One score per rater per target, re-rating
 // overwrites. The write and the target's aggregate move together in one
@@ -19,12 +20,15 @@ export default defineEventHandler(async (event) => {
   }
 
   const [target] = await db
-    .select({ userId: profiles.userId })
+    .select({ userId: profiles.userId, leaderboardBucket: profiles.leaderboardBucket })
     .from(profiles)
     .where(eq(profiles.username, targetUsername))
   if (!target) throw createError({ statusCode: 404, statusMessage: "No such member" })
   if (target.userId === raterId) {
     throw createError({ statusCode: 400, statusMessage: "You cannot rate your own profile" })
+  }
+  if (await isBlocked(raterId, target.userId)) {
+    throw createError({ statusCode: 403, statusMessage: "Unavailable" })
   }
 
   const result = await db.transaction(async (tx) => {
@@ -65,9 +69,12 @@ export default defineEventHandler(async (event) => {
     return agg
   })
 
+  // The opt-out hides the public number, so a member who set their bucket to
+  // none never has their average or count read back, even by a rater.
+  const hidden = target.leaderboardBucket === "none"
   const average =
-    result && result.ratingCount > 0
+    !hidden && result && result.ratingCount > 0
       ? Math.round((result.ratingSum / result.ratingCount) * 10) / 10
       : null
-  return { yourScore: score, average, ratingCount: result?.ratingCount ?? 0 }
+  return { yourScore: score, average, ratingCount: hidden ? null : (result?.ratingCount ?? 0) }
 })

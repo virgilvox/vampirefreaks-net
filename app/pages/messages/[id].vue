@@ -50,8 +50,10 @@ type Msg = {
   recipientUsername: string | null
 }
 
-const { data: message } = await useFetch<Msg | null>(`/api/messages/${route.params.id}`, {
+const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
+const { data: message } = await useFetch<Msg | null>(`/api/messages/${String(route.params.id)}`, {
   default: () => null,
+  headers: cookieHeaders,
 })
 
 useHead(() => ({ title: message.value?.subject || "Message" }))

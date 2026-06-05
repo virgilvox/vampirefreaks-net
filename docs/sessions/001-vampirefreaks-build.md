@@ -62,6 +62,19 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Forum (Phase 3 start): `/api/boards`, `/api/boards/[slug]/threads`, `POST /api/threads` (thread + opening post in one txn), `GET /api/threads/[id]`, `POST /api/posts` (locked threads rejected, counters synced), `PATCH /api/threads/[id]` (staff pin/lock, audit-logged). Pages: `/forum`, `/forum/[boardSlug]`, `/forum/[boardSlug]/[threadId]` with new-thread dialog, reply form, and staff controls. e2e covers the thread/reply/lock flow.
 - Dummy data removed: the seed now creates only the real forum boards, no fake members or posts. Deleted the 5 seeded `@vf.local` accounts from the live DB (cascaded their ratings, journals, statuses). Boards kept; the one real account preserved. Redeployed and verified live.
 
+### Deep audit + cults + blocking
+
+- Ran four parallel audit agents (security, data-integrity, frontend/routing, conventions/tests). Fixes applied:
+  - Security: sanitizer now strips all at-rules (block-aware) and `position:fixed/sticky` so member CSS cannot escape its scope or overlay the app; ProfileBody container clips + isolates; svg data URIs excluded from url(). Block enforcement added to rating and journal comments via a shared `isBlocked`. Profile patch no longer accepts avatar/banner/song ids (latent IDOR until media ownership exists). Rating response no longer leaks average/count for opted-out targets.
+  - SSR: viewer-dependent reads (`/[username]`, journal entry, messages, cult page) now forward the cookie on the server, fixing wrong-on-first-paint and the friends-only/private flash.
+  - Routing/UX: reserved usernames extended (journals, journal, gallery, organizations); `/admin` gated by a new `admin` role middleware; tokenized the layout's hardcoded colors (added `--color-logo`, `--color-topbar-from/-to`, `--color-accent-bright`, `--color-texture`); deleted the orphaned org pages/components (organizations, accept-invitation, MyInvitations, OrgMembers).
+  - Conventions: removed em dashes; `useToast` key jig-toasts -> vf-toasts; removed the dead `isReservedUsername` export.
+  - DB: added `session_expires_idx` (chrome online-count filtered it every page) -> migration 0001.
+- Cults built: browse/create (slug from name, owner seeded as member), cult page, join (open/approval/closed), leave (owner blocked), owner/mod management (approve, promote/demote, remove), member count maintained in transactions. Fixes the previously-broken Top Cults rail link.
+- Blocking built: block/unblock endpoints (clears friendship on block) + a Block control on profiles, making the block enforcement reachable.
+- Tests: sanitizer hardening unit tests; e2e for cults (open join, approval gate, closed reject, owner-cannot-leave) and blocking (stops rating + messaging, unblock restores). 60 unit/component pass; CI e2e green.
+- HANDOFF.md rewritten for vampirefreaks (was still the JIG template handoff).
+
 ### Phases remaining
 
 - Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.

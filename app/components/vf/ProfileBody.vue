@@ -78,6 +78,11 @@ const scopedCss = computed(() => {
   background: var(--color-surface);
   padding: 1.25rem;
   min-height: 8rem;
+  /* Contain member CSS: clip overflow, hold absolute children to this box, and
+     start a new stacking context so a high z-index cannot cover the app. */
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
 }
 .vf-bio {
   white-space: pre-wrap;

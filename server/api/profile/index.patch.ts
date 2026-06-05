@@ -56,12 +56,11 @@ export default defineEventHandler(async (event) => {
     patch.customCss = body.customCss === null ? null : sanitizeCss(body.customCss)
   }
 
-  // Pointers to the member's own media. Ownership of the referenced photo/song
-  // is checked when those features land; for now accept the id or clear it.
-  for (const key of ["avatarPhotoId", "bannerPhotoId", "profileSongId"] as const) {
-    if (body[key] === null) patch[key] = null
-    else if (typeof body[key] === "string") patch[key] = body[key]
-  }
+  // avatarPhotoId, bannerPhotoId, and profileSongId are deliberately not
+  // accepted here. They point at media rows, so they get set by the gallery and
+  // music handlers that can prove the member owns the referenced id. Accepting a
+  // raw id here would let a member surface another member's media on their
+  // profile.
 
   if (Object.keys(patch).length === 0) {
     throw createError({ statusCode: 400, statusMessage: "Nothing to update" })

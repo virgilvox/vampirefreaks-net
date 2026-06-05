@@ -242,7 +242,7 @@ async function remove(id: string): Promise<void> {
 }
 
 function formatDate(value: Date | string | null | undefined): string {
-  if (!value) return "—"
+  if (!value) return "-"
   return new Date(value).toLocaleDateString()
 }
 </script>

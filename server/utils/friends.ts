@@ -1,6 +1,23 @@
 import { and, eq, or } from "drizzle-orm"
 import { db } from "../db/client"
-import { friendships } from "../db/schema"
+import { blocks, friendships } from "../db/schema"
+
+// True when either member has blocked the other. Write paths that connect two
+// members (message, friend request, rate, comment) reject when this holds, in
+// both directions, so a block cuts interaction symmetrically.
+export async function isBlocked(a: string, b: string): Promise<boolean> {
+  if (a === b) return false
+  const [row] = await db
+    .select({ id: blocks.id })
+    .from(blocks)
+    .where(
+      or(
+        and(eq(blocks.blockerId, a), eq(blocks.blockedId, b)),
+        and(eq(blocks.blockerId, b), eq(blocks.blockedId, a)),
+      ),
+    )
+  return Boolean(row)
+}
 
 // True when the two members have an accepted friendship, in either direction.
 // Journal visibility and the friend feed gate on this.

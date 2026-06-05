@@ -33,7 +33,11 @@ type SentRow = {
   recipientDisplayName: string | null
 }
 
-const { data: messages } = await useFetch<SentRow[]>("/api/messages/sent", { default: () => [] })
+const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
+const { data: messages } = await useFetch<SentRow[]>("/api/messages/sent", {
+  default: () => [],
+  headers: cookieHeaders,
+})
 
 function date(v: string): string {
   return new Date(v).toLocaleString()

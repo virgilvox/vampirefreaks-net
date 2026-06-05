@@ -46,7 +46,11 @@ export const session = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
-  (table) => [index("session_user_id_idx").on(table.userId)],
+  (table) => [
+    index("session_user_id_idx").on(table.userId),
+    // The shell's online count filters sessions by expiry on every page load.
+    index("session_expires_idx").on(table.expiresAt),
+  ],
 )
 
 export const account = pgTable(

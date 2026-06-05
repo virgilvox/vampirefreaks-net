@@ -378,6 +378,126 @@ if (!databaseUrl) {
       expect(blocked.status).toBe(403)
     })
 
+    it("creates an open cult a member can join, and the owner cannot leave", async () => {
+      const owner = await member("cowner")
+      const create = await fetch("/api/cults", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: owner.cookie },
+        body: JSON.stringify({ name: `Open Cult ${stamp}`, joinPolicy: "open" }),
+      })
+      expect(create.status).toBe(201)
+      const { slug } = (await create.json()) as { slug: string }
+
+      const joiner = await member("cjoiner")
+      const join = await fetch(`/api/cults/${slug}/join`, {
+        method: "POST",
+        headers: { cookie: joiner.cookie },
+      })
+      expect(join.status).toBe(201)
+      expect(((await join.json()) as { status: string }).status).toBe("active")
+
+      const page = (await (await fetch(`/api/cults/${slug}`)).json()) as {
+        memberCount: number
+        members: unknown[]
+      }
+      expect(page.memberCount).toBe(2)
+      expect(page.members).toHaveLength(2)
+
+      const leave = await fetch(`/api/cults/${slug}/leave`, {
+        method: "POST",
+        headers: { cookie: owner.cookie },
+      })
+      expect(leave.status).toBe(400)
+    })
+
+    it("holds an approval cult behind owner approval", async () => {
+      const owner = await member("aowner")
+      const { slug } = (await (
+        await fetch("/api/cults", {
+          method: "POST",
+          headers: { "content-type": "application/json", cookie: owner.cookie },
+          body: JSON.stringify({ name: `Approval Cult ${stamp}`, joinPolicy: "approval" }),
+        })
+      ).json()) as { slug: string }
+
+      const joiner = await member("ajoiner")
+      const join = await fetch(`/api/cults/${slug}/join`, {
+        method: "POST",
+        headers: { cookie: joiner.cookie },
+      })
+      expect(((await join.json()) as { status: string }).status).toBe("pending")
+
+      const before = (await (
+        await fetch(`/api/cults/${slug}`, { headers: { cookie: owner.cookie } })
+      ).json()) as { memberCount: number; pending: unknown[] }
+      expect(before.memberCount).toBe(1)
+      expect(before.pending).toHaveLength(1)
+
+      const approve = await fetch(`/api/cults/${slug}/members/${joiner.username}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: owner.cookie },
+        body: JSON.stringify({ action: "approve" }),
+      })
+      expect(approve.status).toBe(200)
+
+      const after = (await (await fetch(`/api/cults/${slug}`)).json()) as { memberCount: number }
+      expect(after.memberCount).toBe(2)
+    })
+
+    it("rejects joining a closed cult", async () => {
+      const owner = await member("zowner")
+      const { slug } = (await (
+        await fetch("/api/cults", {
+          method: "POST",
+          headers: { "content-type": "application/json", cookie: owner.cookie },
+          body: JSON.stringify({ name: `Closed Cult ${stamp}`, joinPolicy: "closed" }),
+        })
+      ).json()) as { slug: string }
+
+      const joiner = await member("zjoiner")
+      const res = await fetch(`/api/cults/${slug}/join`, {
+        method: "POST",
+        headers: { cookie: joiner.cookie },
+      })
+      expect(res.status).toBe(403)
+    })
+
+    it("blocking stops rating and messaging, and unblocking restores them", async () => {
+      const blocker = await member("blka")
+      const blocked = await member("blkb")
+
+      const block = await fetch(`/api/blocks/${blocked.username}`, {
+        method: "POST",
+        headers: { cookie: blocker.cookie },
+      })
+      expect(block.status).toBe(201)
+
+      const rate = await fetch(`/api/profiles/${blocked.username}/rating`, {
+        method: "PUT",
+        headers: { "content-type": "application/json", cookie: blocker.cookie },
+        body: JSON.stringify({ score: 9 }),
+      })
+      expect(rate.status).toBe(403)
+
+      const msg = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: blocked.cookie },
+        body: JSON.stringify({ to: blocker.username, body: "hi" }),
+      })
+      expect(msg.status).toBe(403)
+
+      await fetch(`/api/blocks/${blocked.username}`, {
+        method: "DELETE",
+        headers: { cookie: blocker.cookie },
+      })
+      const rate2 = await fetch(`/api/profiles/${blocked.username}/rating`, {
+        method: "PUT",
+        headers: { "content-type": "application/json", cookie: blocker.cookie },
+        body: JSON.stringify({ score: 9 }),
+      })
+      expect(rate2.status).toBe(200)
+    })
+
     it("posts a status that surfaces in the site feed", async () => {
       const a = await member("st")
       const post = await fetch("/api/status", {

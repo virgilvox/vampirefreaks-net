@@ -38,4 +38,12 @@
    retints it like every other token. */
 :root {
   --shadow-block: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  /* Chrome accents the shell uses. Themes override these; these are the neutral
+     defaults so the contract is complete even with no data-theme set. */
+  --color-logo: var(--color-text);
+  --color-topbar-from: var(--color-surface);
+  --color-topbar-to: var(--color-surface-2);
+  --color-accent-bright: var(--color-accent);
+  --color-texture: rgb(0 0 0 / 0.02);
 }

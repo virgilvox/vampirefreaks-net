@@ -20,6 +20,10 @@ const RESERVED = new Set([
   "forum",
   "bands",
   "events",
+  "journals",
+  "journal",
+  "gallery",
+  "organizations",
   "dashboard",
   "settings",
   "search",
@@ -53,8 +57,4 @@ export function normalizeUsername(raw: unknown): UsernameCheck {
   }
   if (RESERVED.has(value)) return { ok: false, reason: "That username is reserved" }
   return { ok: true, value }
-}
-
-export function isReservedUsername(value: string): boolean {
-  return RESERVED.has(value.toLowerCase())
 }

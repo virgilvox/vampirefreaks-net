@@ -34,7 +34,11 @@ type InboxRow = {
   senderDisplayName: string | null
 }
 
-const { data: messages } = await useFetch<InboxRow[]>("/api/messages", { default: () => [] })
+const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
+const { data: messages } = await useFetch<InboxRow[]>("/api/messages", {
+  default: () => [],
+  headers: cookieHeaders,
+})
 
 function date(v: string): string {
   return new Date(v).toLocaleString()
