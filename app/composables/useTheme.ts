@@ -1,4 +1,4 @@
-export const THEMES = ["punk-zine", "industrial", "paper-teal"] as const
+export const THEMES = ["punk-zine", "industrial", "paper-teal", "crypt"] as const
 export type ThemeName = (typeof THEMES)[number]
 
 // Owns the one attribute that swaps the whole aesthetic. The chosen theme name
@@ -10,8 +10,8 @@ export function useTheme(): {
   setTheme: (name: ThemeName) => void
 } {
   const appConfig = useAppConfig()
-  const fallback = (appConfig.theme as ThemeName) ?? "punk-zine"
-  const theme = useCookie<ThemeName>("jig-theme", { default: () => fallback, sameSite: "lax" })
+  const fallback = (appConfig.theme as ThemeName) ?? "crypt"
+  const theme = useCookie<ThemeName>("vf-theme", { default: () => fallback, sameSite: "lax" })
 
   useHead({ htmlAttrs: { "data-theme": theme } })
 

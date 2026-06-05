@@ -7,6 +7,7 @@
 @import "./themes/punk-zine.css";
 @import "./themes/industrial.css";
 @import "./themes/paper-teal.css";
+@import "./themes/crypt.css";
 
 /* Block shadow as a custom utility so it references the token at use-site and
    follows theme overrides, instead of baking the default like the built-in

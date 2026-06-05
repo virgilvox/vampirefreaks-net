@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { organization } from "better-auth/plugins"
+import { admin, organization } from "better-auth/plugins"
 import { passkey } from "@better-auth/passkey"
 import { db } from "../db/client"
 import * as schema from "../db/schema"
@@ -38,7 +38,12 @@ export const auth = betterAuth({
   plugins: [
     // WebAuthn passkeys. rpID is the domain the credential is bound to; it is
     // the hostname of the base URL, so localhost in dev and your domain in prod.
-    passkey({ rpName: "JIG", rpID: new URL(baseURL).hostname, origin: baseURL }),
+    passkey({ rpName: "VampireFreaks", rpID: new URL(baseURL).hostname, origin: baseURL }),
+    // Staff roles and the ban state moderation builds on. Lands role, banned,
+    // banReason, banExpires on the user table and impersonatedBy on session,
+    // which schema.ts mirrors. There are no member tiers: admin and member are
+    // capability roles, not paid ones.
+    admin(),
     // Multi-tenant primitives: organizations, members, invitations. Available
     // but never forced. The example notes app stays single-user; wire your own
     // data to the active organization when a product needs tenancy.

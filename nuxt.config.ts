@@ -22,7 +22,7 @@ export default defineNuxtConfig({
   // Default aesthetic. Swap the value to ship a different look with zero
   // component changes. See app/assets/design/themes for the options.
   appConfig: {
-    theme: "punk-zine",
+    theme: "crypt",
   },
 
   // Server secrets (DATABASE_URL, BETTER_AUTH_SECRET, OAuth keys) are read
