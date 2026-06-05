@@ -13,8 +13,7 @@
       rules. There are no paid tiers; every account has the same standing.
     </p>
     <p>
-      The service is provided as is. It is a community project and a homage, not the original
-      company.
+      The service is provided as is. It is a community project, not the original company or service.
     </p>
   </section>
 </template>

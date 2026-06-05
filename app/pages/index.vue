@@ -123,16 +123,16 @@ const tab = ref("news")
 
 const news = [
   {
-    title: "vampirefreaks.net is open",
-    body: "A homage to the VampireFreaks era, rebuilt. Claim a username, build a profile, and rate the scene.",
+    title: "Journals",
+    body: "Write entries as public, friends-only, or private, and comment on the ones you can read.",
   },
   {
-    title: "No premium, no store",
-    body: "Every account is the same tier and moderation applies to everyone equally. The good parts of the era, none of the pay-to-skip-moderation.",
+    title: "Cults",
+    body: "Start a group, set who can join, and manage its roster.",
   },
   {
-    title: "Journals are live",
-    body: "Write entries, set them public, friends-only, or private, and comment on the ones you can see.",
+    title: "Forums",
+    body: "The message boards are open. Pick a board and start a thread.",
   },
 ]
 
