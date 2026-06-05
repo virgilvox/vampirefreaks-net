@@ -58,6 +58,13 @@
           >
             {{ profile.blocked ? "Unblock" : "Block" }}
           </button>
+          <div v-if="!isOwner && canRate" class="vf-report-row">
+            <VfReportButton
+              target-type="profile"
+              :target-id="profile.userId"
+              label="Report profile"
+            />
+          </div>
         </UiCard>
       </aside>
     </div>
@@ -280,5 +287,8 @@ async function send(): Promise<void> {
 .vf-block:hover {
   color: var(--color-danger);
   text-decoration: underline;
+}
+.vf-report-row {
+  padding: 0.15rem 0;
 }
 </style>

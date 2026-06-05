@@ -21,6 +21,9 @@
           >
           <UiButton variant="danger" @click="remove">Delete</UiButton>
         </div>
+        <div v-else-if="canComment" class="vf-entry-actions">
+          <VfReportButton target-type="journal" :target-id="entry.id" label="Report entry" />
+        </div>
       </header>
       <div class="vf-entry-body">{{ entry.body }}</div>
     </article>

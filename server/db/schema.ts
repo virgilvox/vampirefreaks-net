@@ -678,6 +678,10 @@ export const reports = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     targetType: text("target_type").notNull(), // profile | photo | journal | post | message | cult | event
     targetId: text("target_id").notNull(),
+    // A snapshot label and link captured when the report is filed, so the queue
+    // stays readable and linkable even after the content is removed.
+    targetLabel: text("target_label"),
+    targetHref: text("target_href"),
     reason: text("reason").notNull(),
     status: text("status").notNull().default("open"), // open | resolved | dismissed
     handledBy: text("handled_by").references(() => user.id, { onDelete: "set null" }),

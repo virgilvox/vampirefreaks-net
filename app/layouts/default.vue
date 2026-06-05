@@ -59,6 +59,7 @@
               <li><NuxtLink :to="`/${profile.username}`">My Profile</NuxtLink></li>
               <li><NuxtLink to="/cults">My Cults</NuxtLink></li>
               <li><NuxtLink to="/account">Edit Profile</NuxtLink></li>
+              <li v-if="isStaff"><NuxtLink to="/admin">Moderation</NuxtLink></li>
               <li><button type="button" @click="logout">Logout</button></li>
             </ul>
           </template>
@@ -124,8 +125,10 @@
 </template>
 
 <script setup lang="ts">
-const { refresh } = await useCurrentUser()
+const { user, refresh } = await useCurrentUser()
 const { profile } = await useProfile()
+
+const isStaff = computed(() => (user.value as { role?: string } | null)?.role === "admin")
 
 type Chrome = {
   stats: { members: number; online: number }

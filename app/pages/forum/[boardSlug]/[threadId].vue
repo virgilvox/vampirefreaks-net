@@ -30,6 +30,7 @@
               p.displayName || p.username
             }}</NuxtLink>
             <span class="vf-post-when">{{ when(p.createdAt) }}</span>
+            <VfReportButton v-if="profile" target-type="post" :target-id="p.id" />
           </div>
           <div class="vf-post-body">{{ p.body }}</div>
         </li>

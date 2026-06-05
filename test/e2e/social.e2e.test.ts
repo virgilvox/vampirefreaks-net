@@ -510,6 +510,56 @@ if (!databaseUrl) {
       expect(feed.some((s) => s.body === "haunting the forums tonight")).toBe(true)
     })
 
+    it("reports content, gates the queue to staff, and lets staff resolve and remove", async () => {
+      const author = await member("rpauthor")
+      const create = await fetch("/api/journals", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: author.cookie },
+        body: JSON.stringify({ title: "report me", body: "spammy", visibility: "public" }),
+      })
+      const journal = (await create.json()) as { id: string }
+
+      const reporter = await member("rpreporter")
+      const report = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: reporter.cookie },
+        body: JSON.stringify({ targetType: "journal", targetId: journal.id, reason: "spam" }),
+      })
+      expect(report.status).toBe(201)
+
+      // A normal member cannot see the queue.
+      const denied = await fetch("/api/admin/reports", { headers: { cookie: reporter.cookie } })
+      expect(denied.status).toBe(403)
+
+      // Promote a member to staff directly (roles are not self-serve).
+      const staff = await member("rpstaff")
+      const pool = new Pool({ connectionString: databaseUrl })
+      await pool.query(`update "user" set role = 'admin' where email = $1`, [email("rpstaff")])
+      await pool.end()
+
+      const queue = (await (
+        await fetch("/api/admin/reports", { headers: { cookie: staff.cookie } })
+      ).json()) as Array<{ id: string; targetId: string }>
+      const mine = queue.find((r) => r.targetId === journal.id)
+      expect(mine).toBeDefined()
+
+      // Remove the reported content as staff.
+      const remove = await fetch("/api/admin/remove", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: staff.cookie },
+        body: JSON.stringify({ targetType: "journal", targetId: journal.id }),
+      })
+      expect(remove.status).toBe(200)
+
+      // The journal is gone and the report left the open queue.
+      const gone = await fetch(`/api/journals/${journal.id}`)
+      expect(gone.status).toBe(404)
+      const after = (await (
+        await fetch("/api/admin/reports", { headers: { cookie: staff.cookie } })
+      ).json()) as Array<{ id: string }>
+      expect(after.some((r) => r.id === mine?.id)).toBe(false)
+    })
+
     it("creates an organization when the Origin header is present", async () => {
       const cookie = await signUp("org")
       const res = await fetch("/api/auth/organization/create", {
