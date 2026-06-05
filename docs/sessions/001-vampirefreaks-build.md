@@ -56,9 +56,15 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Seed now adds starter journals and statuses so the feed and rails are not empty. Re-seeded live.
 - Deployed: redeployed the droplet image and re-ran the seed. Live and verified.
 
+### Audit pass + forum + dummy removal
+
+- Audit fixes: `/api/profile/me` returns null (not 401) for signed-out visitors since the shell calls it everywhere; post-auth redirects no longer point at the deleted `/dashboard` (sign-in -> `/`, sign-up -> `/onboarding`, verify-email links fixed); login only offers configured sign-in methods via the public `/api/auth-providers` endpoint (GitHub/Google hidden unless their keys are set; email + passkey always); fixed the broken MUSIC (`/bands`) and PICS (`/[username]/gallery`) nav with real placeholder pages; the "Messageboard" link now points at the forum, not the inbox.
+- Forum (Phase 3 start): `/api/boards`, `/api/boards/[slug]/threads`, `POST /api/threads` (thread + opening post in one txn), `GET /api/threads/[id]`, `POST /api/posts` (locked threads rejected, counters synced), `PATCH /api/threads/[id]` (staff pin/lock, audit-logged). Pages: `/forum`, `/forum/[boardSlug]`, `/forum/[boardSlug]/[threadId]` with new-thread dialog, reply form, and staff controls. e2e covers the thread/reply/lock flow.
+- Dummy data removed: the seed now creates only the real forum boards, no fake members or posts. Deleted the 5 seeded `@vf.local` accounts from the live DB (cascaded their ratings, journals, statuses). Boards kept; the one real account preserved. Redeployed and verified live.
+
 ### Phases remaining
 
 - Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.
-- Phase 3 community: cults + unified forum, roles/join policies, reporting queue, blocking routes, admin tools. Schema + stubs in place.
+- Phase 3 community: site forum DONE. Still to do: cults (browse/create/join/page + cult-scoped boards via the unified mechanism), roles/join policies, reporting queue, block/unblock routes (enforcement reads already exist), admin moderation UI, and making a staff account (set user.role=admin). The age-gate minor-protection from PRD 12 (locked-down messaging/discoverability for under-18) is collected but not yet enforced.
 - Phase 4 music/events: band pages, song uploads, profile music player, events + RSVPs. Schema + stubs in place.
 - Phase 5: sandboxed freeform-HTML profiles behind the age gate.
