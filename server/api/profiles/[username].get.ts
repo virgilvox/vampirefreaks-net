@@ -7,6 +7,7 @@ import {
   photos,
   profileRatings,
   profiles,
+  songs,
   user as userTable,
 } from "../../db/schema"
 import { optionalUser } from "../../utils/session"
@@ -20,6 +21,8 @@ export default defineEventHandler(async (event) => {
   const avatarPhoto = alias(photos, "avatar_photo")
   const [row] = await db
     .select({
+      profileSongUrl: songs.url,
+      profileSongTitle: songs.title,
       userId: profiles.userId,
       username: profiles.username,
       displayName: profiles.displayName,
@@ -49,6 +52,7 @@ export default defineEventHandler(async (event) => {
     .from(profiles)
     .innerJoin(userTable, eq(userTable.id, profiles.userId))
     .leftJoin(avatarPhoto, eq(avatarPhoto.id, profiles.avatarPhotoId))
+    .leftJoin(songs, eq(songs.id, profiles.profileSongId))
     .where(eq(profiles.username, username))
 
   if (!row) throw createError({ statusCode: 404, statusMessage: "No such member" })

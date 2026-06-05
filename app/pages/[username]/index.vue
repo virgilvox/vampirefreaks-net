@@ -10,6 +10,12 @@
       @message="messageOpen = true"
     />
 
+    <VfMusicPlayer
+      v-if="profile.profileSongUrl"
+      :src="profile.profileSongUrl"
+      :title="profile.profileSongTitle || 'Profile song'"
+    />
+
     <div class="vf-profile-grid">
       <div class="vf-profile-col-main">
         <VfProfileBody
@@ -137,6 +143,8 @@ type PublicProfile = {
   fontChoice?: string | null
   customCss?: string | null
   avatarUrl?: string | null
+  profileSongUrl?: string | null
+  profileSongTitle?: string | null
   indexable: boolean
   average?: number | null
   ratingCount?: number | null

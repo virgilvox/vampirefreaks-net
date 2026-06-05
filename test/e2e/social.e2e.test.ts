@@ -753,6 +753,93 @@ if (!databaseUrl) {
       expect(del.status).toBe(200)
     })
 
+    it("keeps a new band off the public list until staff approve it", async () => {
+      const owner = await member("bandowner")
+      const create = await fetch("/api/bands", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: owner.cookie },
+        body: JSON.stringify({ name: `The Dreaming ${stamp}`, genre: "darkwave" }),
+      })
+      expect(create.status).toBe(201)
+      const { slug, approved } = (await create.json()) as { slug: string; approved: boolean }
+      expect(approved).toBe(false)
+
+      // Not on the public browse list yet.
+      const list1 = (await (await fetch("/api/bands")).json()) as Array<{ slug: string }>
+      expect(list1.some((b) => b.slug === slug)).toBe(false)
+
+      // A stranger cannot see the pending page, the owner can.
+      const stranger = await member("bandstranger")
+      const strangerView = await fetch(`/api/bands/${slug}`, {
+        headers: { cookie: stranger.cookie },
+      })
+      expect(strangerView.status).toBe(404)
+      const ownerView = await fetch(`/api/bands/${slug}`, { headers: { cookie: owner.cookie } })
+      expect(ownerView.status).toBe(200)
+
+      // Promote a staff account and approve.
+      const staff = await member("bandstaff")
+      const pool = new Pool({ connectionString: databaseUrl })
+      await pool.query(`update "user" set role = 'admin' where email = $1`, [email("bandstaff")])
+      await pool.end()
+      const approve = await fetch(`/api/bands/${slug}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: staff.cookie },
+        body: JSON.stringify({ approved: true }),
+      })
+      expect(approve.status).toBe(200)
+
+      const list2 = (await (await fetch("/api/bands")).json()) as Array<{ slug: string }>
+      expect(list2.some((b) => b.slug === slug)).toBe(true)
+    })
+
+    it("sets a profile song only from the member's own tracks", async () => {
+      const me = await member("songme")
+      const other = await member("songother")
+      const pool = new Pool({ connectionString: databaseUrl })
+      const ids = (
+        await pool.query("select username, user_id from profiles where username = any($1)", [
+          [me.username, other.username],
+        ])
+      ).rows as Array<{ username: string; user_id: string }>
+      const myId = ids.find((r) => r.username === me.username)?.user_id as string
+      const otherId = ids.find((r) => r.username === other.username)?.user_id as string
+      const myTrack = `song-mine-${stamp}`
+      const otherTrack = `song-other-${stamp}`
+      await pool.query(
+        `insert into songs (id, uploader_id, title, object_key, url) values
+         ($1,$2,'mine','k1','https://cdn.test/mine.mp3'),
+         ($3,$4,'theirs','k2','https://cdn.test/theirs.mp3')`,
+        [myTrack, myId, otherTrack, otherId],
+      )
+      await pool.end()
+
+      // Setting another member's track is rejected.
+      const stealing = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: me.cookie },
+        body: JSON.stringify({ profileSongId: otherTrack }),
+      })
+      expect(stealing.status).toBe(400)
+
+      // Setting my own track works and shows on my profile.
+      const setMine = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: me.cookie },
+        body: JSON.stringify({ profileSongId: myTrack }),
+      })
+      expect(setMine.status).toBe(200)
+      const prof = (await (await fetch(`/api/profiles/${me.username}`)).json()) as {
+        profileSongUrl: string | null
+      }
+      expect(prof.profileSongUrl).toBe("https://cdn.test/mine.mp3")
+    })
+
+    it("requires auth to upload a song", async () => {
+      const res = await fetch("/api/songs", { method: "POST" })
+      expect(res.status).toBe(401)
+    })
+
     it("creates an organization when the Origin header is present", async () => {
       const cookie = await signUp("org")
       const res = await fetch("/api/auth/organization/create", {

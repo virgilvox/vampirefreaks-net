@@ -59,6 +59,7 @@
               <li><NuxtLink :to="`/${profile.username}`">My Profile</NuxtLink></li>
               <li><NuxtLink to="/cults">My Cults</NuxtLink></li>
               <li><NuxtLink to="/account">Edit Profile</NuxtLink></li>
+              <li><NuxtLink to="/account/music">My Music</NuxtLink></li>
               <li v-if="isStaff"><NuxtLink to="/admin">Moderation</NuxtLink></li>
               <li><button type="button" @click="logout">Logout</button></li>
             </ul>

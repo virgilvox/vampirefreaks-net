@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { db } from "../../db/client"
-import { profiles } from "../../db/schema"
+import { profiles, songs } from "../../db/schema"
 import { requireProfile } from "../../utils/profile"
 import { sanitizeCss } from "../../utils/sanitize"
 
@@ -56,11 +56,19 @@ export default defineEventHandler(async (event) => {
     patch.customCss = body.customCss === null ? null : sanitizeCss(body.customCss)
   }
 
-  // avatarPhotoId, bannerPhotoId, and profileSongId are deliberately not
-  // accepted here. They point at media rows, so they get set by the gallery and
-  // music handlers that can prove the member owns the referenced id. Accepting a
-  // raw id here would let a member surface another member's media on their
-  // profile.
+  // avatarPhotoId and bannerPhotoId are set by the gallery handlers that can
+  // prove ownership. profileSongId is accepted here only after confirming the
+  // track belongs to this member, so it cannot point at someone else's song.
+  if (body.profileSongId === null) {
+    patch.profileSongId = null
+  } else if (typeof body.profileSongId === "string") {
+    const [owned] = await db
+      .select({ id: songs.id })
+      .from(songs)
+      .where(and(eq(songs.id, body.profileSongId), eq(songs.uploaderId, userId)))
+    if (!owned) throw createError({ statusCode: 400, statusMessage: "That is not your track" })
+    patch.profileSongId = body.profileSongId
+  }
 
   if (Object.keys(patch).length === 0) {
     throw createError({ statusCode: 400, statusMessage: "Nothing to update" })
