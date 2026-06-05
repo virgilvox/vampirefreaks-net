@@ -23,6 +23,20 @@
           :font-choice="profile.fontChoice"
           :custom-css="profile.customCss"
         />
+
+        <VfPanel title="Journal" flush>
+          <template #action>
+            <NuxtLink :to="`/${profile.username}/journal`" class="vf-more">all entries</NuxtLink>
+          </template>
+          <div v-if="journals && journals.length">
+            <VfJournalCard
+              v-for="e in journals.slice(0, 5)"
+              :key="e.id"
+              :entry="{ ...e, username: profile.username }"
+            />
+          </div>
+          <p v-else class="vf-panel-empty">No entries yet.</p>
+        </VfPanel>
       </div>
       <aside class="vf-profile-col-side">
         <UiCard title="Stats">
@@ -104,6 +118,20 @@ const { data: profile, refresh } = await useFetch<PublicProfile | null>(
   { default: () => null },
 )
 
+type JournalRow = {
+  id: string
+  title: string
+  body: string
+  mood: string | null
+  visibility: string
+  commentCount: number
+  createdAt: string
+}
+const { data: journals } = await useFetch<JournalRow[]>(
+  () => `/api/profiles/${username.value}/journals`,
+  { default: () => [] },
+)
+
 const isOwner = computed(() => profile.value?.friendStatus === "self")
 const memberSince = computed(() =>
   profile.value ? new Date(profile.value.createdAt).toLocaleDateString() : "",
@@ -175,6 +203,20 @@ async function send(): Promise<void> {
 </script>
 
 <style scoped>
+.vf-more {
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+.vf-more:hover {
+  color: var(--color-accent);
+}
+.vf-panel-empty {
+  padding: 0.6rem;
+  color: var(--color-muted);
+  font-style: italic;
+  font-size: 0.85rem;
+}
 .vf-profile-grid {
   display: grid;
   grid-template-columns: 1fr;

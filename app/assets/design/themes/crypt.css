@@ -1,22 +1,28 @@
-/* crypt: VampireFreaks era. Blood red on near-black, gothic display, boxy edges. */
+/* crypt: the VampireFreaks era. Hot magenta on near-black metal, blackletter
+   logo, dense small sans body. Tuned against the 2000s vampirefreaks.com shell:
+   the chrome (wordmark, nav, links, the freak count) is magenta-pink; crimson is
+   the secondary highlight; body copy is small Verdana-style sans, not serif. */
 :root[data-theme="crypt"] {
-  --color-bg: #0a0a0c;
-  --color-surface: #141016;
+  --color-bg: #08080b;
+  --color-surface: #121016;
   --color-surface-2: #1d1722;
-  --color-text: #d9d3dc;
-  --color-muted: #8a8090;
-  --color-border: #2c2230;
-  --color-accent: #b3122a;
-  --color-accent-text: #f5e9ea;
-  --color-danger: #e23b3b;
+  --color-text: #d2ccd7;
+  --color-muted: #837a8f;
+  --color-border: #2b2230;
+  --color-accent: #cf1d7a;
+  --color-accent-text: #fff1f8;
+  --color-danger: #d52f4a;
   --color-danger-text: #1a0606;
   --color-success: #5b9d6a;
-  --color-ring: #b3122a;
+  --color-ring: #cf1d7a;
 
+  /* Display is blackletter, reserved for the wordmark and large headers. Body
+     is a dense utilitarian sans, the way the era's profiles actually read.
+     Crimson highlight rides on --color-danger so no new token is needed. */
   --font-display: "Pirata One", "UnifrakturCook", serif;
-  --font-body: "Cormorant Garamond", Georgia, serif;
+  --font-body: Verdana, Tahoma, "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --radius-block: 0.125rem;
-  --shadow-block: 0 0 0 1px #2c2230, 0 2px 8px rgb(0 0 0 / 0.6);
+  --shadow-block: 0 0 0 1px #2b2230, 0 2px 8px rgb(0 0 0 / 0.6);
 }

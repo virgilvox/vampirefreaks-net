@@ -241,6 +241,98 @@ if (!databaseUrl) {
       expect(otherInbox).toHaveLength(0)
     })
 
+    it("publishes a public journal that surfaces in the recent feed", async () => {
+      const a = await member("ja")
+      const create = await fetch("/api/journals", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: a.cookie },
+        body: JSON.stringify({
+          title: "Velvet and rust",
+          body: "first entry",
+          visibility: "public",
+        }),
+      })
+      expect(create.status).toBe(201)
+      const entry = (await create.json()) as { id: string }
+
+      const recent = (await (await fetch("/api/feed/journals")).json()) as Array<{ id: string }>
+      expect(recent.some((j) => j.id === entry.id)).toBe(true)
+    })
+
+    it("hides a friends-only journal from non-friends and reveals it after friending", async () => {
+      const author = await member("jowner")
+      const stranger = await member("jstranger")
+
+      const create = await fetch("/api/journals", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: author.cookie },
+        body: JSON.stringify({ title: "secret", body: "for friends", visibility: "friends" }),
+      })
+      const entry = (await create.json()) as { id: string }
+
+      // A stranger cannot see it (404, so its existence is not leaked).
+      const denied = await fetch(`/api/journals/${entry.id}`, {
+        headers: { cookie: stranger.cookie },
+      })
+      expect(denied.status).toBe(404)
+
+      // The owner always can.
+      const owner = await fetch(`/api/journals/${entry.id}`, { headers: { cookie: author.cookie } })
+      expect(owner.status).toBe(200)
+
+      // After an accepted friendship, the friend can.
+      await fetch(`/api/friends/${author.username}`, {
+        method: "POST",
+        headers: { cookie: stranger.cookie },
+      })
+      await fetch(`/api/friends/${stranger.username}/respond`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: author.cookie },
+        body: JSON.stringify({ action: "accept" }),
+      })
+      const allowed = await fetch(`/api/journals/${entry.id}`, {
+        headers: { cookie: stranger.cookie },
+      })
+      expect(allowed.status).toBe(200)
+    })
+
+    it("counts a comment on a visible journal", async () => {
+      const author = await member("jc")
+      const reader = await member("jcr")
+      const create = await fetch("/api/journals", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: author.cookie },
+        body: JSON.stringify({ title: "open", body: "comment here", visibility: "public" }),
+      })
+      const entry = (await create.json()) as { id: string }
+
+      const comment = await fetch(`/api/journals/${entry.id}/comments`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: reader.cookie },
+        body: JSON.stringify({ body: "first" }),
+      })
+      expect(comment.status).toBe(201)
+
+      const full = (await (await fetch(`/api/journals/${entry.id}`)).json()) as {
+        commentCount: number
+        comments: unknown[]
+      }
+      expect(full.commentCount).toBe(1)
+      expect(full.comments).toHaveLength(1)
+    })
+
+    it("posts a status that surfaces in the site feed", async () => {
+      const a = await member("st")
+      const post = await fetch("/api/status", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: a.cookie },
+        body: JSON.stringify({ body: "haunting the forums tonight" }),
+      })
+      expect(post.status).toBe(201)
+      const feed = (await (await fetch("/api/feed/site")).json()) as Array<{ body: string }>
+      expect(feed.some((s) => s.body === "haunting the forums tonight")).toBe(true)
+    })
+
     it("creates an organization when the Origin header is present", async () => {
       const cookie = await signUp("org")
       const res = await fetch("/api/auth/organization/create", {
