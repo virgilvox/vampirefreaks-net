@@ -7,8 +7,9 @@ Postgres runs on the droplet with its data on an attached block-storage volume.
 ## Pieces
 
 - `.github/workflows/deploy.yml` builds the image on every push to `main` and
-  pushes `registry.digitalocean.com/freshblu/vampirefreaks-net:latest`. It needs
-  the repo secret `DIGITALOCEAN_ACCESS_TOKEN`.
+  pushes `ghcr.io/virgilvox/vampirefreaks-net:latest` using the built-in
+  `GITHUB_TOKEN` (no extra secret). The package is public, so the droplet pulls it
+  without credentials.
 - `Dockerfile` is one stage that keeps node_modules, so the same image serves the
   app and runs `npm run db:migrate` / `npm run db:seed`.
 - `deploy/docker-compose.prod.yml` is the droplet stack: db (volume-backed),
@@ -39,10 +40,7 @@ docker compose -f docker-compose.prod.yml run --rm migrate
 
 ## Notes
 
-- The droplet's registry credentials are read-only (pull). The
-  `DIGITALOCEAN_ACCESS_TOKEN` in GitHub Actions is account-scoped; rotate it to a
-  registry-scoped token when one is available.
+- The image is a public GHCR package, so no registry credentials live on the
+  droplet. Media uploads use a bucket-scoped Spaces key in the droplet env.
 - Email verification is off until Resend is configured. Set `RESEND_API_KEY`,
   `EMAIL_FROM`, and flip `REQUIRE_EMAIL_VERIFICATION=true` in the app env.
-- Media uploads (Spaces) land in a later phase; `SPACES_KEY`/`SPACES_SECRET` are
-  not set yet.

@@ -7,8 +7,7 @@
 # the registry credentials are never committed):
 #   __POSTGRES_PASSWORD__   generated per droplet
 #   __BETTER_AUTH_SECRET__  generated per droplet
-#   __APP_IMAGE__           registry.digitalocean.com/freshblu/vampirefreaks-net:latest
-#   __DOCKER_CONFIG_B64__   base64 of `doctl registry docker-config` (read-only pull creds)
+#   __APP_IMAGE__           ghcr.io/virgilvox/vampirefreaks-net:latest (public, no pull creds)
 set -euo pipefail
 
 VOL=/dev/disk/by-id/scsi-0DO_Volume_vfdata
@@ -32,14 +31,16 @@ if [ ! -f /swapfile ]; then
   echo "/swapfile none swap sw 0 0" >>/etc/fstab
 fi
 
-# 3. Registry pull credentials (read-only), then the stack files.
-mkdir -p /root/.docker /opt/vf
-echo "__DOCKER_CONFIG_B64__" | base64 -d >/root/.docker/config.json
+# 3. The stack files. The image is a public GHCR package, so no registry login
+# is needed to pull it.
+mkdir -p /opt/vf
 
 cat >/opt/vf/.env <<EOF
 APP_IMAGE=__APP_IMAGE__
 POSTGRES_PASSWORD=__POSTGRES_PASSWORD__
 BETTER_AUTH_SECRET=__BETTER_AUTH_SECRET__
+SPACES_KEY=__SPACES_KEY__
+SPACES_SECRET=__SPACES_SECRET__
 EOF
 chmod 600 /opt/vf/.env
 
