@@ -612,6 +612,46 @@ if (!databaseUrl) {
       expect(prof.avatarUrl).toBe("https://cdn.test/2.png")
     })
 
+    it("posts an event, RSVPs, lists it upcoming, and gates edits to the creator", async () => {
+      const creator = await member("evcreator")
+      const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      const create = await fetch("/api/events", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: creator.cookie },
+        body: JSON.stringify({ title: `Cybertron ${stamp}`, startsAt: future, city: "NYC" }),
+      })
+      expect(create.status).toBe(201)
+      const ev = (await create.json()) as { id: string }
+
+      const list = (await (await fetch("/api/events")).json()) as {
+        upcoming: Array<{ id: string }>
+      }
+      expect(list.upcoming.some((e) => e.id === ev.id)).toBe(true)
+
+      const goer = await member("evgoer")
+      const rsvp = await fetch(`/api/events/${ev.id}/rsvp`, {
+        method: "PUT",
+        headers: { "content-type": "application/json", cookie: goer.cookie },
+        body: JSON.stringify({ status: "going" }),
+      })
+      expect(rsvp.status).toBe(200)
+      const detail = (await (await fetch(`/api/events/${ev.id}`)).json()) as { goingCount: number }
+      expect(detail.goingCount).toBe(1)
+
+      // A non-creator cannot delete it.
+      const denied = await fetch(`/api/events/${ev.id}`, {
+        method: "DELETE",
+        headers: { cookie: goer.cookie },
+      })
+      expect(denied.status).toBe(403)
+
+      const del = await fetch(`/api/events/${ev.id}`, {
+        method: "DELETE",
+        headers: { cookie: creator.cookie },
+      })
+      expect(del.status).toBe(200)
+    })
+
     it("creates an organization when the Origin header is present", async () => {
       const cookie = await signUp("org")
       const res = await fetch("/api/auth/organization/create", {

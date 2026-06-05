@@ -12,7 +12,29 @@
       </template>
     </UiCard>
 
-    <UiCard v-else title="Profile" :subtitle="`vampirefreaks.net/${profile.username}`">
+    <UiCard v-if="profile" title="Avatar">
+      <div class="vf-avatar-edit">
+        <img v-if="avatarUrl" :src="avatarUrl" alt="current avatar" class="vf-avatar-preview" />
+        <span v-else class="vf-avatar-preview vf-avatar-none" aria-hidden="true">
+          {{ profile.username.charAt(0).toUpperCase() }}
+        </span>
+        <div class="vf-avatar-controls">
+          <input
+            ref="avatarInput"
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            aria-label="Choose an avatar image"
+            @change="onAvatarPick"
+          />
+          <UiButton :disabled="avatarUploading || !avatarFile" @click="uploadAvatar">
+            {{ avatarUploading ? "Uploading..." : "Upload avatar" }}
+          </UiButton>
+          <p class="vf-hint">PNG, JPEG, GIF, or WebP, up to 6 MB. It joins your gallery too.</p>
+        </div>
+      </div>
+    </UiCard>
+
+    <UiCard v-if="profile" title="Profile" :subtitle="`vampirefreaks.net/${profile.username}`">
       <form class="flex flex-col gap-4" @submit.prevent="saveProfile">
         <UiFormField label="Display name" for="p-display">
           <template #default="{ id }"><UiInput :id="id" v-model="form.displayName" /></template>
@@ -143,6 +165,50 @@ const { user } = await useCurrentUser()
 const { profile, refresh: refreshProfile } = await useProfile()
 const { push } = useToast()
 
+// Current avatar preview, resolved from the member's own profile read.
+const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
+const { data: avatarData, refresh: refreshAvatar } = await useFetch<{
+  avatarUrl: string | null
+} | null>(() => (profile.value ? `/api/profiles/${profile.value.username}` : ""), {
+  default: () => null,
+  headers: cookieHeaders,
+  immediate: Boolean(profile.value),
+})
+const avatarUrl = computed(() => avatarData.value?.avatarUrl ?? null)
+
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarFile = ref<File | null>(null)
+const avatarUploading = ref(false)
+
+function onAvatarPick(e: Event): void {
+  avatarFile.value = (e.target as HTMLInputElement).files?.[0] ?? null
+}
+
+async function uploadAvatar(): Promise<void> {
+  if (!avatarFile.value) return
+  avatarUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append("file", avatarFile.value)
+    const photo = await $fetch<{ id: string; isPrimary: boolean }>("/api/photos", {
+      method: "POST",
+      body: fd,
+    })
+    // A later upload is not primary by default, so make this one the avatar.
+    if (!photo.isPrimary) {
+      await $fetch(`/api/photos/${photo.id}`, { method: "PATCH", body: { isPrimary: true } })
+    }
+    avatarFile.value = null
+    if (avatarInput.value) avatarInput.value.value = ""
+    await Promise.all([refreshAvatar(), refreshProfile()])
+    push({ title: "Avatar updated" })
+  } catch {
+    push({ title: "Could not upload that", variant: "danger" })
+  } finally {
+    avatarUploading.value = false
+  }
+}
+
 const bucketOptions = [
   { label: "Not listed", value: "none" },
   { label: "Top boys", value: "boys" },
@@ -262,6 +328,38 @@ function formatDate(value: Date | string | null | undefined): string {
   flex-direction: column;
   gap: 0.25rem;
   font-size: 0.85rem;
+  color: var(--color-muted);
+}
+.vf-avatar-edit {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.vf-avatar-preview {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: var(--radius-block);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+}
+.vf-avatar-none {
+  background: var(--color-surface-2);
+  color: var(--color-muted);
+}
+.vf-avatar-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.vf-hint {
+  font-size: 0.74rem;
   color: var(--color-muted);
 }
 </style>
