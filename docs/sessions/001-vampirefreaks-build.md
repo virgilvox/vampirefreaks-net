@@ -106,6 +106,15 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Avatar upload added to the profile editor (`/account`): posts through the photo pipeline and sets the result primary, with a live preview. Reuses the existing endpoints, no new backend.
 - 58 unit/component pass; CI green; deployed and verified (`/events` 200, gated POST 401).
 
+### UI/UX audit pass, branding, README
+
+- Correctness/security: ongoing events stay in Upcoming (split on coalesce(endsAt, startsAt)); event url validated http(s)-only on create/edit; endsAt cannot predate startsAt; avatar-from-editor is one server call via a `primary` flag on the photo upload (no partial state).
+- UI/UX: one `.vf-page-title` class across all in-shell pages (was a mix of dense vs oversized headings); mobile puts content above the sidebars and keeps the nav as one scrollable strip (drops the duplicate quick links); raised `--color-muted` contrast in crypt; homepage Featured Cult shows a real cult.
+- Branding: `public/og.svg` (VampireFreaks "Revival" wordmark) and `public/favicon.svg`, wired via head meta (og:image, twitter, icon); "created by hack.build" footer credit linking https://hack.build.
+- README rewritten for vampirefreaks.net in plain voice (no emojis, em dashes, or marketing language).
+- Tests: e2e for cult member-management authorization (owner-only promote/demote, mods can't remove mods, memberCount honest) and journal owner-only edit/delete. 58 unit/component pass; CI green; deployed and verified (favicon/og 200, footer credit live).
+- Deferred from the audits (noted, not yet done): full UiCard -> VfPanel unification, lightbox focus-trap + close button, rating-widget radiogroup/keyboard, extracting detectImage/SigV4 for unit tests, a PNG OG image (SVG renders in many contexts but Facebook/Twitter prefer PNG), and the bands/music feature.
+
 ### Phases remaining
 
 - Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.
