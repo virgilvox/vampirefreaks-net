@@ -46,7 +46,19 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Redeploy: push to main (CI rebuilds), then on the droplet `cd /opt/vf && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml run --rm migrate && docker compose -f docker-compose.prod.yml up -d`.
 - Follow-up hardening: `DIGITALOCEAN_ACCESS_TOKEN` in Actions is account-scoped; swap for a registry-scoped token when available. Email verification is off until Resend is configured. Spaces upload keys are not set yet (media lands in a later phase).
 
-### Phases 2-5: scaffolded, not yet built
+### VF UI overhaul + Phase 2 start (journals, status, activity)
 
-- Schema for journals, photos/albums, cults/cultMembers, boards/threads/posts, bands/songs, events/rsvps, reports/blocks/auditLog/featuredSlots is all in place and migrated.
-- Section stubs render a "lands in a later phase" note. Build order follows PRD section 15.
+- Reskinned the chrome to the early-2000s vampirefreaks.com layout (reference screenshot from Moheeb): blackletter wordmark + live FREAK COUNT + online badge, dense magenta nav (HOME PROFILES FRIENDS JOURNALS CULTS PICS MUSIC EVENTS SITE), left member sidebar (avatar card, Update Status, vertical links), right rails (Top Cults, Top Journals, Newest Freaks), featured row + tabbed news (Site News / Recent Journals / Activity) homepage. `VfPanel` is the reused boxed section.
+- Retuned crypt to the real palette: hot magenta (#cf1d7a) chrome, crimson highlight, small Verdana/Tahoma sans body, blackletter only for the logo, near-black metal-hatch background. Removed the theme selector (ThemeSwitcher deleted from both layouts); crypt is the look. No premium, no store.
+- `/api/chrome` feeds the shell (member count, online = active sessions, rails). `/api/feed/journals` and `/api/feed/site` feed the homepage.
+- Journals (Phase 2): create/edit/delete/read with public/friends/private visibility enforced server-side (shared `canView`/`areFriends` helper), comments with synced counter, member journal lists, the editor, and the public-profile journal panel. Status updates post to the activity stream via the sidebar dialog.
+- Tests: component tests for RatingWidget, Panel, LeaderboardPanel, JournalCard; e2e for journal publish, friends-only visibility gate (404 for non-friends, reveals after friending), comment counting, status posting. 56 unit/component pass; CI e2e green.
+- Seed now adds starter journals and statuses so the feed and rails are not empty. Re-seeded live.
+- Deployed: redeployed the droplet image and re-ran the seed. Live and verified.
+
+### Phases remaining
+
+- Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.
+- Phase 3 community: cults + unified forum, roles/join policies, reporting queue, blocking routes, admin tools. Schema + stubs in place.
+- Phase 4 music/events: band pages, song uploads, profile music player, events + RSVPs. Schema + stubs in place.
+- Phase 5: sandboxed freeform-HTML profiles behind the age gate.
