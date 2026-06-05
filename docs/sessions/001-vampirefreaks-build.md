@@ -26,6 +26,7 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Gates green: eslint clean, 40 unit/component tests pass, typecheck exit 0, production build exit 0.
 
 ### Phase 1: identity and social loop
+
 - Status: code complete, gates green.
 - Server utils: username (validation + reserved list), profile (requireProfile, getProfileByUsername, publicAverage), sanitize (CSS allowlist), rate-limit (in-process sliding window), session (added optionalUser, requireAdmin).
 - API: profile create/me/patch, public profile read (with viewer rating + friend state + block), rating PUT (transactional aggregate), leaderboard (5-rating floor), friends (list/request/respond/remove + public list), messages (inbox/send/sent/read/single with handles), home panels.
@@ -35,5 +36,6 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Profile customization is the structured/bounded path (PRD 10.2). Freeform sandboxed-iframe HTML (Phase 5) is deliberately not rendered.
 
 ### Phases 2-5: scaffolded, not yet built
+
 - Schema for journals, photos/albums, cults/cultMembers, boards/threads/posts, bands/songs, events/rsvps, reports/blocks/auditLog/featuredSlots is all in place and migrated.
 - Section stubs render a "lands in a later phase" note. Build order follows PRD section 15.

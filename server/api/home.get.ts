@@ -8,7 +8,7 @@ import { profiles } from "../db/schema"
 // to this payload as those features land.
 const MIN_RATINGS = 5
 
-const avg = sql<number>`(${profiles.ratingSum}::float / ${profiles.ratingCount})`
+const avg = sql<number>`(${profiles.ratingSum}::float / NULLIF(${profiles.ratingCount}, 0))`
 const cols = {
   username: profiles.username,
   displayName: profiles.displayName,

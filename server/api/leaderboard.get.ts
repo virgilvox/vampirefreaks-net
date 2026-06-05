@@ -11,7 +11,9 @@ const PAGE = 25
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   const bucket = typeof q.bucket === "string" ? q.bucket : "popular"
-  const avg = sql<number>`(${profiles.ratingSum}::float / ${profiles.ratingCount})`
+  // NULLIF guards the newest tab, where members can have zero ratings: dividing
+  // by it yields null rather than a division-by-zero error.
+  const avg = sql<number>`(${profiles.ratingSum}::float / NULLIF(${profiles.ratingCount}, 0))`
 
   const base = {
     username: profiles.username,

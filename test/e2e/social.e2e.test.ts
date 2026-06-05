@@ -10,8 +10,10 @@ const databaseUrl = process.env.DATABASE_URL
 // Unique per run so reruns against a persistent database do not collide.
 const stamp = Date.now()
 const email = (tag: string): string => `e2e-${stamp}-${tag}@vf.local`
+// Tag first, then the run stamp, so distinct tags stay distinct after the
+// 20-character cap (handles are 3 to 20 chars). The stamp keeps reruns clean.
 const handle = (tag: string): string =>
-  `e2e${stamp}${tag}`
+  `${tag}${stamp}`
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, "")
     .slice(0, 20)

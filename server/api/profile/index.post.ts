@@ -87,10 +87,12 @@ function yearsSince(date: Date): number {
 }
 
 function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: string }).code === "23505"
-  )
+  // drizzle wraps the driver error, so the Postgres SQLSTATE (23505 =
+  // unique_violation) can sit on the error itself or on its cause.
+  const code = (e: unknown): string | undefined =>
+    typeof e === "object" && e !== null && "code" in e ? (e as { code?: string }).code : undefined
+  if (code(error) === "23505") return true
+  const cause =
+    typeof error === "object" && error !== null ? (error as { cause?: unknown }).cause : undefined
+  return code(cause) === "23505"
 }
