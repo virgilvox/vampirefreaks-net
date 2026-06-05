@@ -1,7 +1,7 @@
 import "./load-env"
 import { eq, sql } from "drizzle-orm"
 import { db } from "./client"
-import { boards, profiles, profileRatings, user } from "./schema"
+import { boards, journals, profiles, profileRatings, statusUpdates, user } from "./schema"
 
 // Seeds a starter scene so a fresh database is not an empty room: a handful of
 // members with ratings, plus the site forum boards. Idempotent on the members
@@ -140,7 +140,46 @@ async function seed(): Promise<void> {
       .onConflictDoNothing({ target: [boards.scope, boards.slug] })
   }
 
-  console.log(`Seeded ${ids.length} members and ${BOARDS.length} boards.`)
+  // A few journals and statuses so the homepage feed and the Top Journals rail
+  // are not empty. ids match MEMBERS order: raven, ash, lily, vex, corvid.
+  const author = (i: number): string => ids[i] ?? ids[0] ?? ""
+  const existingJournals = await db.select({ id: journals.id }).from(journals).limit(1)
+  if (existingJournals.length === 0 && ids.length > 0) {
+    await db.insert(journals).values([
+      {
+        userId: author(0),
+        title: "Three nights without the rain",
+        body: "The club reopened and it still smells like clove and fog machine. Felt like coming home.",
+        mood: "nostalgic",
+        visibility: "public",
+      },
+      {
+        userId: author(1),
+        title: "Building a profile in 2026",
+        body: "Custom CSS but sandboxed this time. Spent an hour on the cursor. Worth it.",
+        mood: "wired",
+        visibility: "public",
+      },
+      {
+        userId: author(2),
+        title: "Deathrock starter pack",
+        body: "If you only know one Christian Death record we need to talk. Comment your gateway song.",
+        mood: "evangelical",
+        visibility: "public",
+      },
+    ])
+  }
+
+  const existingStatus = await db.select({ id: statusUpdates.id }).from(statusUpdates).limit(1)
+  if (existingStatus.length === 0 && ids.length > 0) {
+    await db.insert(statusUpdates).values([
+      { userId: author(0), body: "rating profiles all night, send yours" },
+      { userId: author(1), body: "new mix up, all rivethead everything" },
+      { userId: author(2), body: "who is going to the thing on saturday" },
+    ])
+  }
+
+  console.log(`Seeded ${ids.length} members, ${BOARDS.length} boards, journals, and statuses.`)
 }
 
 seed()
