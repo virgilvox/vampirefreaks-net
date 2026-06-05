@@ -10,6 +10,6 @@
 useTheme()
 useHead({
   htmlAttrs: { lang: "en" },
-  titleTemplate: (title) => (title ? `${title} · JIG` : "JIG"),
+  titleTemplate: (title) => (title ? `${title} · vampirefreaks` : "vampirefreaks"),
 })
 </script>
