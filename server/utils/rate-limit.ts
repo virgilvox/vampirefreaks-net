@@ -9,9 +9,20 @@ import type { H3Event } from "h3"
 
 type Bucket = { count: number; resetAt: number }
 const buckets = new Map<string, Bucket>()
+let lastSweep = 0
 
 function disabled(): boolean {
   return process.env.DISABLE_RATE_LIMIT === "true"
+}
+
+// Drop expired buckets so the map does not grow unbounded with the
+// `action:userId` key space. Runs at most once a minute, piggybacked on calls.
+function sweep(now: number): void {
+  if (now - lastSweep < 60_000) return
+  lastSweep = now
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt <= now) buckets.delete(key)
+  }
 }
 
 // Throws 429 when the caller has spent its allowance for the window. key scopes
@@ -24,6 +35,7 @@ export function enforceRateLimit(
 ): void {
   if (disabled()) return
   const now = Date.now()
+  sweep(now)
   const existing = buckets.get(key)
   if (!existing || existing.resetAt <= now) {
     buckets.set(key, { count: 1, resetAt: now + windowMs })

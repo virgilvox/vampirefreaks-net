@@ -5,7 +5,7 @@
     </DialogTrigger>
 
     <DialogPortal>
-      <DialogOverlay class="jig-dialog-overlay fixed inset-0 z-40 bg-black/50" />
+      <DialogOverlay class="jig-dialog-overlay fixed inset-0 z-40" />
       <DialogContent
         class="jig-dialog-content fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-block border-2 border-border bg-surface p-5 text-text shadow-block focus:outline-none"
       >
@@ -26,7 +26,7 @@
           aria-label="Close"
           class="absolute right-3 top-3 rounded-block px-2 py-1 text-muted hover:bg-surface-2"
         >
-          ✕
+          <span aria-hidden="true">✕</span>
         </DialogClose>
       </DialogContent>
     </DialogPortal>
@@ -49,3 +49,10 @@ const open = defineModel<boolean>("open", { default: false })
 
 defineProps<{ title: string; description?: string }>()
 </script>
+
+<style scoped>
+/* Scrim retints with the theme rather than a hardcoded black. */
+.jig-dialog-overlay {
+  background: var(--color-overlay);
+}
+</style>

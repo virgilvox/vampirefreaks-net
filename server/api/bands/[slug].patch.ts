@@ -2,11 +2,13 @@ import { eq } from "drizzle-orm"
 import { db } from "../../db/client"
 import { auditLog, bands } from "../../db/schema"
 import { requireUser } from "../../utils/session"
+import { enforceRateLimit } from "../../utils/rate-limit"
 
 // Edit a band (owner) or approve it (staff). Approval is recorded in the audit
 // log. The owner can update the details; only staff can flip approved.
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
+  enforceRateLimit(event, `band-edit:${user.id}`, 20, 60_000)
   const slug = getRouterParam(event, "slug")?.toLowerCase() ?? ""
   const [band] = await db
     .select({ id: bands.id, ownerUserId: bands.ownerUserId })

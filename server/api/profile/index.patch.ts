@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm"
 import { db } from "../../db/client"
 import { profiles, songs } from "../../db/schema"
 import { requireProfile } from "../../utils/profile"
-import { sanitizeCss } from "../../utils/sanitize"
+import { sanitizeCss, safeMediaUrl } from "../../utils/sanitize"
 
 // Owner edit of the profile fields and the structured customization. The handle
 // and the rating aggregates are not editable here: the handle is claimed once,
@@ -46,8 +46,18 @@ export default defineEventHandler(async (event) => {
     if (v === null) patch[key] = null
     else if (typeof v === "string" && /^#[0-9a-fA-F]{3,8}$/.test(v.trim())) patch[key] = v.trim()
   }
+  // The background image renders as url() in an inline style, so hold it to the
+  // same CDN/relative/data-image allowlist as the freeform CSS path. An
+  // off-origin value is rejected rather than stored, so a profile cannot beacon
+  // to an arbitrary host on view.
   const bgImageUrl = str(body.bgImageUrl, 500)
-  if (bgImageUrl !== undefined) patch.bgImageUrl = bgImageUrl
+  if (bgImageUrl === null) patch.bgImageUrl = null
+  else if (bgImageUrl !== undefined) {
+    const safe = safeMediaUrl(bgImageUrl)
+    if (!safe)
+      throw createError({ statusCode: 400, statusMessage: "That background URL is not allowed" })
+    patch.bgImageUrl = safe
+  }
   if (typeof body.fontChoice === "string" && FONTS.has(body.fontChoice))
     patch.fontChoice = body.fontChoice
   if (body.fontChoice === null) patch.fontChoice = null

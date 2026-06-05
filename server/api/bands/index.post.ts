@@ -25,23 +25,34 @@ export default defineEventHandler(async (event) => {
     typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null
 
   const base = slugify(name).slice(0, 40) || "band"
-  const slug = await uniqueSlug(base)
+  const values = {
+    ownerUserId: userId,
+    name,
+    genre: str(body?.genre, 60),
+    location: str(body?.location, 120),
+    bio: typeof body?.bio === "string" ? body.bio.slice(0, 4000) : "",
+    approved: false,
+  }
 
-  const [created] = await db
-    .insert(bands)
-    .values({
-      ownerUserId: userId,
-      slug,
-      name,
-      genre: str(body?.genre, 60),
-      location: str(body?.location, 120),
-      bio: typeof body?.bio === "string" ? body.bio.slice(0, 4000) : "",
-      approved: false,
-    })
-    .returning()
-  if (!created) throw createError({ statusCode: 500, statusMessage: "Could not create band" })
-  setResponseStatus(event, 201)
-  return { slug: created.slug, approved: created.approved }
+  // uniqueSlug picks a free slug, but two concurrent creates can resolve to the
+  // same one and race into the unique index. Retry on a unique-violation (23505)
+  // with a freshly chosen slug rather than 500ing the loser.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const slug = await uniqueSlug(base)
+    try {
+      const [created] = await db
+        .insert(bands)
+        .values({ ...values, slug })
+        .returning()
+      if (!created) throw createError({ statusCode: 500, statusMessage: "Could not create band" })
+      setResponseStatus(event, 201)
+      return { slug: created.slug, approved: created.approved }
+    } catch (err) {
+      if ((err as { code?: string }).code === "23505" && attempt < 4) continue
+      throw err
+    }
+  }
+  throw createError({ statusCode: 500, statusMessage: "Could not create band" })
 })
 
 async function uniqueSlug(base: string): Promise<string> {

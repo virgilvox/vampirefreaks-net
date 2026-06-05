@@ -25,12 +25,14 @@
     <VfPanel flush>
       <div v-if="photos.length" class="vf-grid">
         <figure v-for="p in photos" :key="p.id" class="vf-photo">
-          <img
-            :src="p.url"
-            :alt="p.caption || 'gallery photo'"
-            class="vf-photo-img"
-            @click="lightbox = p.url"
-          />
+          <button
+            type="button"
+            class="vf-photo-trigger"
+            :aria-label="`View ${p.caption || 'photo'} larger`"
+            @click="openLightbox(p.url, $event)"
+          >
+            <img :src="p.url" :alt="p.caption || 'gallery photo'" class="vf-photo-img" />
+          </button>
           <figcaption v-if="p.caption" class="vf-photo-cap">{{ p.caption }}</figcaption>
           <span v-if="p.isPrimary" class="vf-photo-badge">avatar</span>
           <div v-if="isOwner" class="vf-photo-actions">
@@ -52,10 +54,19 @@
       aria-modal="true"
       aria-label="Photo"
       tabindex="-1"
-      @click="lightbox = null"
-      @keydown.esc="lightbox = null"
+      @click="closeLightbox"
+      @keydown.esc="closeLightbox"
+      @keydown.tab.prevent
     >
-      <img :src="lightbox" alt="photo" />
+      <button
+        type="button"
+        class="vf-lightbox-close"
+        aria-label="Close"
+        @click.stop="closeLightbox"
+      >
+        <span aria-hidden="true">✕</span>
+      </button>
+      <img :src="lightbox" alt="photo" @click.stop />
     </div>
   </section>
 </template>
@@ -87,13 +98,27 @@ const caption = ref("")
 const uploading = ref(false)
 const lightbox = ref<string | null>(null)
 const lightboxEl = ref<HTMLElement | null>(null)
+let lastTrigger: HTMLElement | null = null
 
-// Focus the lightbox when it opens so Escape and a click anywhere dismiss it.
+// Open the lightbox, remembering the thumbnail so focus returns to it on close.
+function openLightbox(url: string, e: MouseEvent): void {
+  lastTrigger = e.currentTarget as HTMLElement
+  lightbox.value = url
+}
+
+// Move focus into the overlay on open (Tab is trapped there via keydown.prevent),
+// and restore it to the triggering thumbnail when it closes.
 watch(lightbox, async (url) => {
   if (!url) return
   await nextTick()
   lightboxEl.value?.focus()
 })
+
+function closeLightbox(): void {
+  lightbox.value = null
+  lastTrigger?.focus()
+  lastTrigger = null
+}
 
 function onPick(e: Event): void {
   file.value = (e.target as HTMLInputElement).files?.[0] ?? null
@@ -134,11 +159,6 @@ async function remove(id: string): Promise<void> {
 </script>
 
 <style scoped>
-.vf-page-title {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  color: var(--color-text);
-}
 .vf-upload {
   display: flex;
   flex-wrap: wrap;
@@ -164,11 +184,22 @@ async function remove(id: string): Promise<void> {
   overflow: hidden;
   background: var(--color-surface-2);
 }
+.vf-photo-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+.vf-photo-trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
 .vf-photo-img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
-  cursor: zoom-in;
   display: block;
 }
 .vf-photo-cap {
@@ -227,5 +258,23 @@ async function remove(id: string): Promise<void> {
   max-width: 100%;
   max-height: 100%;
   border: 2px solid var(--color-border);
+  cursor: default;
+}
+.vf-lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-block);
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.vf-lightbox-close:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 </style>

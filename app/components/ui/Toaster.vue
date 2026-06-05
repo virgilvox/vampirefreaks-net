@@ -13,7 +13,7 @@
         {{ toast.description }}
       </ToastDescription>
       <ToastClose aria-label="Dismiss" class="absolute right-2 top-2 text-muted hover:text-text">
-        ✕
+        <span aria-hidden="true">✕</span>
       </ToastClose>
     </ToastRoot>
 

@@ -2,14 +2,16 @@ import { eq } from "drizzle-orm"
 import { db } from "../../db/client"
 import { events } from "../../db/schema"
 import { requireUser } from "../../utils/session"
-import { safeHttpUrl } from "./index.post"
+import { enforceRateLimit } from "../../utils/rate-limit"
+import { safeHttpUrl } from "../../utils/url"
 
 // Edit an event. The creator or staff only.
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
+  enforceRateLimit(event, `event-edit:${user.id}`, 20, 60_000)
   const id = getRouterParam(event, "id") ?? ""
   const [existing] = await db
-    .select({ creatorId: events.creatorId })
+    .select({ creatorId: events.creatorId, startsAt: events.startsAt, endsAt: events.endsAt })
     .from(events)
     .where(eq(events.id, id))
   if (!existing) throw createError({ statusCode: 404, statusMessage: "No such event" })
@@ -39,11 +41,12 @@ export default defineEventHandler(async (event) => {
       patch.endsAt = null
     }
   }
-  if (
-    patch.startsAt instanceof Date &&
-    patch.endsAt instanceof Date &&
-    patch.endsAt < patch.startsAt
-  ) {
+  // Compare the effective start and end after applying the patch, not just the
+  // fields in this request. Moving startsAt past a stored endsAt (or the reverse)
+  // would otherwise slip through when only one side is sent.
+  const effectiveStart = patch.startsAt instanceof Date ? patch.startsAt : existing.startsAt
+  const effectiveEnd = "endsAt" in patch ? (patch.endsAt as Date | null) : existing.endsAt
+  if (effectiveStart && effectiveEnd && effectiveEnd < effectiveStart) {
     throw createError({ statusCode: 400, statusMessage: "The end is before the start" })
   }
   if (Object.keys(patch).length === 0) {

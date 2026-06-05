@@ -2,6 +2,7 @@ import { db } from "../../db/client"
 import { events } from "../../db/schema"
 import { requireProfile } from "../../utils/profile"
 import { enforceRateLimit } from "../../utils/rate-limit"
+import { safeHttpUrl } from "../../utils/url"
 
 // Post an event. startsAt is required; the rest are optional. The creator owns
 // it for later edits.
@@ -55,16 +56,4 @@ function parseDate(v: unknown): Date | null {
   if (typeof v !== "string" || !v) return null
   const d = new Date(v)
   return Number.isNaN(d.getTime()) ? null : d
-}
-
-// Accept only http(s) links, so a stored url cannot become a javascript: or
-// data: vector when rendered as an anchor on the event page.
-export function safeHttpUrl(v: unknown): string | null {
-  if (typeof v !== "string" || !v.trim()) return null
-  try {
-    const u = new URL(v.trim())
-    return u.protocol === "http:" || u.protocol === "https:" ? u.toString().slice(0, 500) : null
-  } catch {
-    return null
-  }
 }

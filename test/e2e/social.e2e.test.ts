@@ -840,6 +840,216 @@ if (!databaseUrl) {
       expect(res.status).toBe(401)
     })
 
+    it("lets only the uploader edit or delete a track, and clears the profile song on delete", async () => {
+      const me = await member("trackowner")
+      const other = await member("trackother")
+      const pool = new Pool({ connectionString: databaseUrl })
+      const myId = (
+        await pool.query("select user_id from profiles where username = $1", [me.username])
+      ).rows[0]?.user_id as string
+      const trackId = `song-own-${stamp}`
+      await pool.query(
+        `insert into songs (id, uploader_id, title, object_key, url)
+         values ($1,$2,'mine','k-own','https://cdn.test/own.mp3')`,
+        [trackId, myId],
+      )
+      await pool.end()
+
+      // Make it the profile song so we can prove the pointer is cleared on delete.
+      const setSong = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: me.cookie },
+        body: JSON.stringify({ profileSongId: trackId }),
+      })
+      expect(setSong.status).toBe(200)
+
+      // A different member cannot rename or delete it.
+      const editDenied = await fetch(`/api/songs/${trackId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: other.cookie },
+        body: JSON.stringify({ title: "stolen" }),
+      })
+      expect(editDenied.status).toBe(404)
+      const delDenied = await fetch(`/api/songs/${trackId}`, {
+        method: "DELETE",
+        headers: { cookie: other.cookie },
+      })
+      expect(delDenied.status).toBe(404)
+
+      // The owner deletes it, and the profile song pointer goes null.
+      const del = await fetch(`/api/songs/${trackId}`, {
+        method: "DELETE",
+        headers: { cookie: me.cookie },
+      })
+      expect(del.status).toBe(200)
+      const prof = (await (await fetch(`/api/profiles/${me.username}`)).json()) as {
+        profileSongUrl: string | null
+      }
+      expect(prof.profileSongUrl).toBe(null)
+    })
+
+    it("blocks attaching a track to a band the member does not own", async () => {
+      const me = await member("attme")
+      const bandOwner = await member("attowner")
+      const create = await fetch("/api/bands", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: bandOwner.cookie },
+        body: JSON.stringify({ name: `Foreign Act ${stamp}` }),
+      })
+      expect(create.status).toBe(201)
+      const { slug } = (await create.json()) as { slug: string }
+      const band = (await (
+        await fetch(`/api/bands/${slug}`, { headers: { cookie: bandOwner.cookie } })
+      ).json()) as { id: string }
+
+      const pool = new Pool({ connectionString: databaseUrl })
+      const myId = (
+        await pool.query("select user_id from profiles where username = $1", [me.username])
+      ).rows[0]?.user_id as string
+      const trackId = `song-attach-${stamp}`
+      await pool.query(
+        `insert into songs (id, uploader_id, title, object_key, url)
+         values ($1,$2,'mine','k-att','https://cdn.test/att.mp3')`,
+        [trackId, myId],
+      )
+      await pool.end()
+
+      const attach = await fetch(`/api/songs/${trackId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: me.cookie },
+        body: JSON.stringify({ bandId: band.id }),
+      })
+      expect(attach.status).toBe(403)
+    })
+
+    it("does not let a band owner approve their own band", async () => {
+      const owner = await member("selfappr")
+      const create = await fetch("/api/bands", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: owner.cookie },
+        body: JSON.stringify({ name: `Self Approve ${stamp}` }),
+      })
+      expect(create.status).toBe(201)
+      const { slug } = (await create.json()) as { slug: string }
+
+      // The owner branch ignores `approved`, so this leaves nothing to update.
+      const tryApprove = await fetch(`/api/bands/${slug}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: owner.cookie },
+        body: JSON.stringify({ approved: true }),
+      })
+      expect(tryApprove.status).toBe(400)
+      const view = (await (
+        await fetch(`/api/bands/${slug}`, { headers: { cookie: owner.cookie } })
+      ).json()) as { approved: boolean }
+      expect(view.approved).toBe(false)
+    })
+
+    it("lets the owner or staff delete a band, and refuses a stranger", async () => {
+      const owner = await member("bdelowner")
+      const create = await fetch("/api/bands", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: owner.cookie },
+        body: JSON.stringify({ name: `Doomed Act ${stamp}` }),
+      })
+      expect(create.status).toBe(201)
+      const { slug } = (await create.json()) as { slug: string }
+
+      const stranger = await member("bdelstranger")
+      const denied = await fetch(`/api/bands/${slug}`, {
+        method: "DELETE",
+        headers: { cookie: stranger.cookie },
+      })
+      expect(denied.status).toBe(403)
+
+      const del = await fetch(`/api/bands/${slug}`, {
+        method: "DELETE",
+        headers: { cookie: owner.cookie },
+      })
+      expect(del.status).toBe(200)
+      const gone = await fetch(`/api/bands/${slug}`, { headers: { cookie: owner.cookie } })
+      expect(gone.status).toBe(404)
+    })
+
+    it("gates event edits to the creator and validates the date order on patch", async () => {
+      const creator = await member("evedit")
+      const start = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      const end = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString()
+      const create = await fetch("/api/events", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: creator.cookie },
+        body: JSON.stringify({ title: `Editable ${stamp}`, startsAt: start, endsAt: end }),
+      })
+      expect(create.status).toBe(201)
+      const ev = (await create.json()) as { id: string }
+
+      // A non-creator cannot edit it.
+      const other = await member("evpatchother")
+      const denied = await fetch(`/api/events/${ev.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: other.cookie },
+        body: JSON.stringify({ title: "hijacked" }),
+      })
+      expect(denied.status).toBe(403)
+
+      // Moving the start past the stored end, with no end in the body, is rejected.
+      const later = new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString()
+      const inverted = await fetch(`/api/events/${ev.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: creator.cookie },
+        body: JSON.stringify({ startsAt: later }),
+      })
+      expect(inverted.status).toBe(400)
+
+      // A plain rename by the creator works.
+      const renamed = await fetch(`/api/events/${ev.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json", cookie: creator.cookie },
+        body: JSON.stringify({ title: "Renamed" }),
+      })
+      expect(renamed.status).toBe(200)
+    })
+
+    it("moves and clears an RSVP without miscounting", async () => {
+      const creator = await member("rsvpc")
+      const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      const create = await fetch("/api/events", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: creator.cookie },
+        body: JSON.stringify({ title: `Counted ${stamp}`, startsAt: future }),
+      })
+      const ev = (await create.json()) as { id: string }
+      const goer = await member("rsvpg")
+      const put = (status: string): Promise<Response> =>
+        fetch(`/api/events/${ev.id}/rsvp`, {
+          method: "PUT",
+          headers: { "content-type": "application/json", cookie: goer.cookie },
+          body: JSON.stringify({ status }),
+        })
+      const counts = async (): Promise<{ goingCount: number; interestedCount: number }> =>
+        (await (await fetch(`/api/events/${ev.id}`)).json()) as {
+          goingCount: number
+          interestedCount: number
+        }
+
+      await put("going")
+      let c = await counts()
+      expect(c.goingCount).toBe(1)
+      expect(c.interestedCount).toBe(0)
+
+      // Switching moves the count rather than double-counting.
+      await put("interested")
+      c = await counts()
+      expect(c.goingCount).toBe(0)
+      expect(c.interestedCount).toBe(1)
+
+      // Clearing drops it entirely.
+      await put("none")
+      c = await counts()
+      expect(c.goingCount).toBe(0)
+      expect(c.interestedCount).toBe(0)
+    })
+
     it("creates an organization when the Origin header is present", async () => {
       const cookie = await signUp("org")
       const res = await fetch("/api/auth/organization/create", {

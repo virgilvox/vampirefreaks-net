@@ -78,7 +78,7 @@ forum boards and nothing else, so every account and post is real.
 ## Tests
 
 - `npm run test`: unit (`test/unit`) and component (`test/components`), no infrastructure.
-  60 tests.
+  67 tests.
 - `npm run test:e2e`: boots the real server against real Postgres, applies the migration,
   and exercises the social loop, journals, forum, cults, blocking, and org primitives.
   Run with a database up: `docker compose up -d db`, then
@@ -124,9 +124,16 @@ detail in `deploy/README.md` and `docs/sessions/001-...`.
   and derives the stored type from them, so the client content-type cannot smuggle a
   non-image; objects store one of four image types. The image package on GHCR is public, so
   no registry credentials sit on the droplet.
-- Baseline security headers ship on every response (nosniff, X-Frame-Options SAMEORIGIN,
-  Referrer-Policy). A full Content-Security-Policy is still a follow-up; profile inline
-  styles need to be accounted for first.
+- A ban is enforced in the app's own auth gate (`requireUser`), not just at sign-in, so a
+  still-live session for a banned account gets no write access.
+- Security headers ship on every response: nosniff, X-Frame-Options SAMEORIGIN,
+  Referrer-Policy, and a Content-Security-Policy. The CSP blocks off-origin scripts, plugins
+  (object-src none), base-tag and form-action redirection, and third-party framing. Inline
+  script stays allowed because Nuxt's hydration payload is inline, and inline style stays
+  allowed for the sanitized profile customization. Tightening script-src to a nonce is the
+  next pass.
+- The structured profile background image runs through the same CDN/relative/data-image
+  allowlist as the freeform CSS, so a profile cannot beacon to an arbitrary host on view.
 
 ## Known gaps and next steps
 
@@ -138,9 +145,13 @@ detail in `deploy/README.md` and `docs/sessions/001-...`.
   stripping and thumbnails for photos, and photo ratings.
 - Phase 5 (sandboxed freeform-HTML profiles behind the age gate) is the last PRD phase and
   is not started; the structured customization path covers v1.
-- Other deferred audit items: full UiCard to VfPanel unification, lightbox focus-trap, the
-  rating-widget radiogroup, a full Content-Security-Policy, cult-scoped forum boards, and
-  enforcing the under-18 messaging restrictions.
+- Counter drift: a target's rating average is not adjusted when a rater's account is
+  deleted (the rating row cascades away but ratingSum/ratingCount do not), and
+  journals.commentCount / threads.postCount only increment. Recompute or add decrement
+  paths when content/account deletion needs exact counts.
+- Other deferred audit items: full UiCard to VfPanel unification, a nonce-based CSP
+  script-src, cult-scoped forum boards, photo EXIF stripping and thumbnails, reaping
+  deleted Spaces objects, and enforcing the under-18 messaging restrictions.
 - Moderation is built: members report profiles/journals/posts/cults, staff work the
   queue at `/admin` (resolve, dismiss, remove, ban), all audit-logged. Make the first
   moderator with `npm run admin:grant -- <email>`. Still open: report controls on

@@ -14,15 +14,24 @@ const MAX_CSS_LENGTH = 8000
 
 const CDN_BASE = (process.env.SPACES_CDN_BASE ?? "").replace(/\/$/, "")
 
-// A url() is allowed only when it targets the project's own media CDN, a raster
-// data: image, or a relative path. svg data URIs are excluded (they can carry
-// markup); everything off-domain is neutralized to about:blank.
-function safeUrl(raw: string): string {
+// A media URL is allowed only when it targets the project's own media CDN, a
+// raster data: image, or a relative path. svg data URIs are excluded (they can
+// carry markup). Returns null for anything off-domain, so a profile cannot
+// beacon to an arbitrary host on view. Used for both the freeform url() pass and
+// the structured background-image field.
+export function safeMediaUrl(raw: string): string | null {
   const value = raw.trim().replace(/^['"]|['"]$/g, "")
   if (/^data:image\/(png|jpe?g|gif|webp);/i.test(value)) return value
   if (value.startsWith("/")) return value
   if (CDN_BASE && value.startsWith(CDN_BASE)) return value
-  return "about:blank"
+  return null
+}
+
+// Same allowlist for the freeform url() pass, where a disallowed value is
+// neutralized to about:blank rather than dropped (the declaration must stay
+// syntactically whole).
+function safeUrl(raw: string): string {
+  return safeMediaUrl(raw) ?? "about:blank"
 }
 
 // Remove every at-rule and its body. An at-rule like @media or @supports wraps

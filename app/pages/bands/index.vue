@@ -25,7 +25,7 @@
     <UiDialog
       v-model:open="createOpen"
       title="Add a band"
-      description="Staff review it before it goes public."
+      description="Staff review new bands before they go public."
     >
       <form class="flex flex-col gap-4" @submit.prevent="create">
         <UiFormField label="Name" for="b-name">
@@ -90,11 +90,6 @@ async function create(): Promise<void> {
 </script>
 
 <style scoped>
-.vf-page-title {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  color: var(--color-text);
-}
 .vf-bands {
   list-style: none;
   margin: 0;

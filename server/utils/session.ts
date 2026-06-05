@@ -3,11 +3,20 @@ import { auth, type SessionUser } from "../auth"
 
 // Guard for API routes. Returns the signed-in user or throws 401, so a handler
 // can start its first line with `const user = await requireUser(event)`.
+//
+// A ban is enforced here as well as at sign-in. better-auth blocks a banned
+// user from creating a session, and banUser revokes existing ones, but
+// getSession does not re-check the flag on later requests. This is the app's own
+// backstop: a still-live session for a banned account gets no write access.
 export async function requireUser(event: H3Event): Promise<SessionUser> {
   const headers = event.headers
   const result = await auth.api.getSession({ headers })
   if (!result?.user) {
     throw createError({ statusCode: 401, statusMessage: "Unauthorized" })
+  }
+  const u = result.user as { banned?: boolean | null; banExpires?: Date | string | null }
+  if (u.banned && (!u.banExpires || new Date(u.banExpires) > new Date())) {
+    throw createError({ statusCode: 403, statusMessage: "Account suspended" })
   }
   return result.user
 }

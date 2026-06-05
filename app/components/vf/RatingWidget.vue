@@ -1,10 +1,11 @@
 <template>
   <div class="vf-rating">
-    <div class="vf-rating-row" role="group" :aria-label="`Rate this profile 1 to 10`">
+    <div class="vf-rating-row" role="radiogroup" aria-label="Rate this profile 1 to 10">
       <button
         v-for="n in 10"
         :key="n"
         type="button"
+        role="radio"
         class="vf-drop"
         :class="{
           'vf-drop-on': n <= hovered,
@@ -12,7 +13,7 @@
         }"
         :disabled="disabled"
         :aria-label="`Rate ${n} of 10`"
-        :aria-pressed="yourScore === n"
+        :aria-checked="yourScore === n"
         @mouseenter="hovered = n"
         @mouseleave="hovered = 0"
         @focus="hovered = n"

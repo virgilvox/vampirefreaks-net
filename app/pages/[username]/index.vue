@@ -103,7 +103,15 @@
           /></template>
         </UiFormField>
         <UiFormField label="Message" for="msg-body">
-          <template #default="{ id }"><UiInput :id="id" v-model="msg.body" required /></template>
+          <template #default="{ id }">
+            <textarea
+              :id="id"
+              v-model="msg.body"
+              rows="4"
+              required
+              class="jig-input w-full rounded-block border-2 border-border bg-surface px-3 py-2 text-text"
+            />
+          </template>
         </UiFormField>
       </form>
       <template #footer>

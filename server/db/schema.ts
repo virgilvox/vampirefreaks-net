@@ -635,8 +635,10 @@ export const events = pgTable(
     description: text("description").notNull().default(""),
     venue: text("venue"),
     city: text("city"),
-    startsAt: timestamp("starts_at").notNull(),
-    endsAt: timestamp("ends_at"),
+    // Stored with the zone so the upcoming/past split against `now` is
+    // unambiguous regardless of the database session timezone.
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
     url: text("url"),
     flyerPhotoId: text("flyer_photo_id"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

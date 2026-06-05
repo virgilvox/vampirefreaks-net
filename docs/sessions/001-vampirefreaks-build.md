@@ -123,6 +123,16 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Tests: e2e for the band approval gate and the profile-song ownership check; song upload requires auth. 58 unit/component pass; CI green; deployed and verified (/bands, /account/music gated, og png live).
 - The full PRD feature set is now built: profiles, ratings, leaderboards, friends, messages, journals, status/activity, photos+avatars, forum, cults, moderation, events, music/bands.
 
+### Deep audit and hardening pass
+
+Ran a four-track audit (security/authorization, data integrity, UI/UX and accessibility, test coverage) and fixed the real findings.
+
+- Security: ban is now enforced in `requireUser` (not only at sign-in), so a still-live session for a banned account gets no write access. Shipped a Content-Security-Policy that blocks off-origin scripts, plugins (object-src none), base-tag and form-action redirection, and third-party framing, while keeping inline allowed for Nuxt hydration and the sanitized profile styles. The structured profile background image runs through the media-URL allowlist. Band/event edit and delete routes are rate-limited, and the rate-limit bucket map sweeps expired entries.
+- Data integrity: deleting a photo now clears any banner, event-flyer, or cult-icon pointer at it, not just the avatar. The event date-order check merges stored and patched start/end so a one-sided patch cannot invert it. Band creation retries on a slug unique-violation instead of 500ing the loser. Event start/end columns moved to timestamptz (migration 0003) so the upcoming/past split is timezone-unambiguous.
+- New: band delete endpoint (owner or staff, staff deletes audit-logged) with a confirm dialog on the band page.
+- UI and accessibility: dialog scrim reads from `--color-overlay`; gallery thumbnails are keyboard-operable buttons and the lightbox traps focus and restores it on close; audio players carry an accessible name; the rating widget is a radiogroup; the profile message body is a textarea; the music and band pages show distinct loading and error states; removed duplicated per-page page-title rules.
+- Tests: 67 unit/component (added `safeHttpUrl`, `enforceRateLimit`, and the MusicPlayer component). New e2e cover song edit/delete ownership, profile-song clear on delete, attaching a track to a foreign band, owner self-approve blocked, event-edit gating and date validation, RSVP move/clear counting, and band delete. `safeHttpUrl` moved to `server/utils/url.ts` so it is unit-testable without the server runtime.
+
 ### Phases remaining
 
 - Phase 2 media: photo galleries on Spaces (presigned uploads, thumbnails, EXIF strip). Schema in place. `/[username]/gallery` and PICS nav still point at stubs/profile.

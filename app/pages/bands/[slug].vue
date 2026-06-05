@@ -16,7 +16,15 @@
           }}</NuxtLink>
         </p>
       </div>
-      <UiButton v-if="band.canApprove && !band.approved" @click="approve">Approve</UiButton>
+      <div class="vf-band-actions">
+        <UiButton v-if="band.canApprove && !band.approved" @click="approve">Approve</UiButton>
+        <UiButton
+          v-if="band.isOwner || band.canApprove"
+          variant="surface"
+          @click="confirmOpen = true"
+          >Delete</UiButton
+        >
+      </div>
     </div>
 
     <VfPanel v-if="band.bio" title="About">
@@ -41,8 +49,25 @@
         Upload tracks on <NuxtLink to="/account/music" class="vf-link">your music</NuxtLink> page.
       </p>
     </VfPanel>
+
+    <UiDialog
+      v-model:open="confirmOpen"
+      title="Delete this band?"
+      description="The band page goes away. Tracks you attached stay on your music page."
+    >
+      <template #footer>
+        <UiButton variant="ghost" @click="confirmOpen = false">Cancel</UiButton>
+        <UiButton variant="surface" :disabled="deleting" @click="remove">{{
+          deleting ? "Deleting..." : "Delete"
+        }}</UiButton>
+      </template>
+    </UiDialog>
   </section>
 
+  <section v-else-if="pending" class="py-16 text-center text-muted">Loading...</section>
+  <section v-else-if="error && error.statusCode !== 404" class="py-16 text-center text-muted">
+    Could not load this band.
+  </section>
   <section v-else class="py-16 text-center text-muted">No such band.</section>
 </template>
 
@@ -68,11 +93,33 @@ type Band = {
 }
 
 const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
-const { data: band, refresh } = await useFetch<Band | null>(() => `/api/bands/${slug.value}`, {
+const {
+  data: band,
+  pending,
+  error,
+  refresh,
+} = await useFetch<Band | null>(() => `/api/bands/${slug.value}`, {
   default: () => null,
   headers: cookieHeaders,
 })
 useHead(() => ({ title: band.value?.name || "Band" }))
+
+const confirmOpen = ref(false)
+const deleting = ref(false)
+
+async function remove(): Promise<void> {
+  deleting.value = true
+  try {
+    await $fetch(`/api/bands/${slug.value}`, { method: "DELETE" })
+    push({ title: "Band deleted" })
+    await navigateTo("/bands")
+  } catch {
+    push({ title: "Could not delete the band", variant: "danger" })
+  } finally {
+    deleting.value = false
+    confirmOpen.value = false
+  }
+}
 
 type MySong = { id: string; title: string; bandId: string | null }
 const { data: mySongsData } = await useFetch<MySong[]>("/api/songs", {
@@ -123,6 +170,11 @@ async function approve(): Promise<void> {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
+}
+.vf-band-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
 }
 .vf-band-title {
   font-family: var(--font-display);

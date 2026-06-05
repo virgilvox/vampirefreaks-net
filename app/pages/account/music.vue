@@ -23,12 +23,20 @@
     </VfPanel>
 
     <VfPanel title="Your tracks" flush>
-      <ul v-if="songs.length" class="vf-tracks">
+      <p v-if="pending" class="vf-empty">Loading...</p>
+      <p v-else-if="error" class="vf-empty">Could not load your tracks.</p>
+      <ul v-else-if="songs.length" class="vf-tracks">
         <li v-for="s in songs" :key="s.id" class="vf-track">
           <div class="vf-track-main">
             <span class="vf-track-title">{{ s.title }}</span>
             <span v-if="profileSongId === s.id" class="vf-track-badge">profile song</span>
-            <audio :src="s.url" controls preload="none" class="vf-track-audio" />
+            <audio
+              :src="s.url"
+              :aria-label="`Play ${s.title}`"
+              controls
+              preload="none"
+              class="vf-track-audio"
+            />
           </div>
           <div class="vf-track-actions">
             <UiButton v-if="profileSongId !== s.id" variant="surface" @click="setProfileSong(s.id)">
@@ -59,7 +67,15 @@ type Song = {
   bandName: string | null
 }
 const cookieHeaders = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
-const { data: songs, refresh } = await useFetch<Song[]>("/api/songs", {
+// pending and error let the list tell a slow or failed load apart from a
+// genuinely empty library, so it never reads as empty when it just has not
+// loaded yet.
+const {
+  data: songs,
+  pending,
+  error,
+  refresh,
+} = await useFetch<Song[]>("/api/songs", {
   default: () => [],
   headers: cookieHeaders,
 })
@@ -106,11 +122,6 @@ async function remove(id: string): Promise<void> {
 </script>
 
 <style scoped>
-.vf-page-title {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  color: var(--color-text);
-}
 .vf-upload {
   display: flex;
   flex-wrap: wrap;

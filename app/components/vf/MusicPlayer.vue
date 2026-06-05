@@ -3,7 +3,13 @@
     <span class="vf-player-mark" aria-hidden="true">&#9834;</span>
     <div class="vf-player-main">
       <span class="vf-player-title">{{ title }}</span>
-      <audio :src="src" controls preload="none" class="vf-player-audio" />
+      <audio
+        :src="src"
+        :aria-label="`Play ${title}`"
+        controls
+        preload="none"
+        class="vf-player-audio"
+      />
     </div>
   </div>
 </template>

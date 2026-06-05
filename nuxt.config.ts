@@ -40,15 +40,33 @@ export default defineNuxtConfig({
 
   // Baseline security headers on every response. nosniff stops content-type
   // sniffing, the frame rules block clickjacking of the app, and the referrer
-  // policy keeps full URLs off cross-origin requests. A full CSP is a later
-  // pass: profile customization renders inline styles that a strict policy would
-  // need to account for.
+  // policy keeps full URLs off cross-origin requests.
+  //
+  // The CSP blocks the vectors that matter: no off-origin scripts, no plugins,
+  // no base-tag or form-action redirection, no framing by others. Inline script
+  // stays allowed because Nuxt's hydration payload is inline, and inline style
+  // stays allowed because profile customization renders scoped inline styles
+  // (those are sanitized server-side in server/utils/sanitize.ts). Tightening
+  // script-src to a nonce is the next pass once the hydration script carries one.
   routeRules: {
     "/**": {
       headers: {
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "SAMEORIGIN",
         "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Content-Security-Policy": [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline'",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: https:",
+          "media-src 'self' https:",
+          "font-src 'self' data:",
+          "connect-src 'self' https:",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+          "frame-ancestors 'self'",
+        ].join("; "),
       },
     },
   },
