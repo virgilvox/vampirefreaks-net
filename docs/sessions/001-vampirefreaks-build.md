@@ -35,6 +35,17 @@ Rebuild of the VampireFreaks social network era on the JIG stack, per the PRD. T
 - Tests: unit for username + sanitize. e2e to run against managed PG.
 - Profile customization is the structured/bounded path (PRD 10.2). Freeform sandboxed-iframe HTML (Phase 5) is deliberately not rendered.
 
+### Deploy: live at https://vampirefreaks.net
+
+- Architecture (per Moheeb's preference): cheapest viable droplet, image built in GitHub Actions, Postgres self-hosted on a block-storage volume. No App Platform, no managed Postgres.
+- Image: GitHub Actions (`.github/workflows/deploy.yml`) builds on push to main and pushes `registry.digitalocean.com/freshblu/vampirefreaks-net:latest`. Needs repo secret `DIGITALOCEAN_ACCESS_TOKEN` (set). One Dockerfile stage keeps node_modules so the same image runs app + drizzle migrate + seed.
+- Droplet: `vampirefreaks` (id 575520754), s-1vcpu-1gb ($6/mo), sfo3, Docker marketplace image, in project lumen. Block volume `vfdata` (id 6020b141..., 10 GiB) mounted at /mnt/vfdata for the Postgres data dir. 2 GB swap. cloud-init pulled the image, ran migrate + seed, started the stack.
+- Stack (`/opt/vf/docker-compose.prod.yml`): postgres (volume-backed), one-shot migrate the app waits on, optional seed, app, Caddy for automatic TLS. Postgres is not published to the host; only Caddy exposes 80/443.
+- DNS: A records `@` and `www` -> 64.23.227.77 on DO DNS. Caddy obtained the Let's Encrypt cert. www 301s to the apex.
+- Verified live: home, /top, leaderboard, a seeded profile all 200 over HTTPS. CI (lint, typecheck, unit/component, build, e2e against real Postgres) green; the e2e also proves the migration applies.
+- Redeploy: push to main (CI rebuilds), then on the droplet `cd /opt/vf && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml run --rm migrate && docker compose -f docker-compose.prod.yml up -d`.
+- Follow-up hardening: `DIGITALOCEAN_ACCESS_TOKEN` in Actions is account-scoped; swap for a registry-scoped token when available. Email verification is off until Resend is configured. Spaces upload keys are not set yet (media lands in a later phase).
+
 ### Phases 2-5: scaffolded, not yet built
 
 - Schema for journals, photos/albums, cults/cultMembers, boards/threads/posts, bands/songs, events/rsvps, reports/blocks/auditLog/featuredSlots is all in place and migrated.
