@@ -1,0 +1,14 @@
+node_modules
+.nuxt
+.output
+.data
+.git
+*.log
+.DS_Store
+coverage
+.vitest
+.env
+.env.*
+!.env.example
+docs
+test

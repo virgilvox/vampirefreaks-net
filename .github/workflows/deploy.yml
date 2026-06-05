@@ -1,0 +1,44 @@
+name: build-image
+
+# Builds the production image in CI (the droplet never builds) and pushes it to
+# the DigitalOcean container registry. The droplet pulls this tag. A redeploy is
+# `docker compose pull && docker compose up -d` on the droplet.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-image-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: registry.digitalocean.com/freshblu/vampirefreaks-net
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to the registry
+        run: doctl registry login --expiry-seconds 1800
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,79 @@
+# Production stack for the droplet. Postgres keeps its data on the attached
+# block-storage volume mounted at /mnt/vfdata, the app and a one-shot migration
+# both run the same image pulled from the registry, and Caddy terminates TLS and
+# reverse-proxies the domain to the app. Secrets and the image tag come from the
+# .env file written next to this compose file by cloud-init.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vf
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: vf
+    volumes:
+      - /mnt/vfdata/pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vf -d vf"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    image: ${APP_IMAGE}
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://vf:${POSTGRES_PASSWORD}@db:5432/vf
+    command: ["npm", "run", "db:migrate"]
+
+  seed:
+    image: ${APP_IMAGE}
+    profiles: ["seed"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://vf:${POSTGRES_PASSWORD}@db:5432/vf
+    command: ["npm", "run", "db:seed"]
+
+  app:
+    image: ${APP_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://vf:${POSTGRES_PASSWORD}@db:5432/vf
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: https://vampirefreaks.net
+      NUXT_PUBLIC_AUTH_BASE_URL: https://vampirefreaks.net
+      REQUIRE_EMAIL_VERIFICATION: "false"
+      SPACES_BUCKET: vampirefreaks
+      SPACES_REGION: sfo3
+      SPACES_ENDPOINT: https://sfo3.digitaloceanspaces.com
+      SPACES_CDN_BASE: https://vampirefreaks.sfo3.cdn.digitaloceanspaces.com
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,10 @@
+# Caddy terminates TLS (automatic Let's Encrypt once the domain points here) and
+# proxies to the app container. www redirects to the apex.
+vampirefreaks.net {
+	encode zstd gzip
+	reverse_proxy app:3000
+}
+
+www.vampirefreaks.net {
+	redir https://vampirefreaks.net{uri} permanent
+}

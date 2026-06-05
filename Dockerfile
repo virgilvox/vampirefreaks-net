@@ -1,5 +1,10 @@
-# Build the Nuxt app, then run the plain Node server Nitro emits.
-FROM node:22-alpine AS build
+# One image that carries the built server plus the source, node_modules, and
+# drizzle-kit. The same image runs three commands on the droplet: the app
+# (default CMD), the migration (npm run db:migrate), and the seed
+# (npm run db:seed). Keeping node_modules makes the image larger but means
+# migrations run through drizzle-kit exactly as they do in development, with no
+# separate migrate image or hand-rolled migrator to drift out of sync.
+FROM node:22-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
@@ -8,12 +13,8 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runtime
-WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
-
-COPY --from=build /app/.output ./.output
 
 EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]
